@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup as bs
+from urllib.parse import urlparse, parse_qs, urlencode
 import shelve
 import myrequests_cacher
 import re
@@ -9,6 +10,13 @@ import requests
 import pdb
 
 table_cookies = {'serp_view_mode': 'table'}
+def add_time_to_url(url, time):
+    parsed_url = urlparse(url)
+    qs = parse_qs(parsed_url.query, keep_blank_values=True)
+    qs['to_time'] = str(time)
+    return parsed_url.scheme + '://' + parsed_url.hostname +\
+        parsed_url.path + '?' + urlencode(qs, doseq=True)
+
 def get_url(url):
     r = requests.get(url, cookies=table_cookies)
     return bs(r.text)
@@ -27,11 +35,13 @@ def create_database():
     return shelve.open('flats.db')
 
 def write_to_database(entry_id, entry, db):
-    print(str(entry_id))
-    db[str(entry_id)] = entry
+    if entry_id in db.keys():
+        print("Already in database", entry_id)
+    else:
+        db[entry_id] = entry
 
 offer_info_class_lambda = lambda x: x is not None and x.startswith('objects_item_info_col_')
-def parse_raw_offer(offer, db):
+def parse_raw_offer(offer):
     info = offer.findAll('td', {'class': offer_info_class_lambda}, recursive=False)
     info = [i.find('div', {'class':'objects_item_info_col_w'}) for i in info]
 
@@ -89,6 +99,9 @@ def parse_raw_offer(offer, db):
     entry_info['comment'] = comment_text
     flat_url = comment.find('a', {'href': lambda x: x is not None}).attrs['href']
     entry_info['url'] = flat_url
+    flat_id = re.match(".*\/([0-9]*)\/", flat_url).groups()[0]
+    entry_info['id'] = int(flat_id)
+
     user_link = info[8].find('a', {'href': lambda x: x is not None and 'id_user' in x})
     entry_info['user'] = {}
     user_name = user_link.text;
@@ -97,18 +110,19 @@ def parse_raw_offer(offer, db):
     user_id = re.match(".*id_user=([0-9]*)&", user_url).groups()[0]
     entry_info['user']['id'] = int(user_id)
 
-    print(entry_info)
-    # pdb.set_trace()
+    return entry_info, flat_id
 
-    write_to_database(int(user_id), entry_info, db)
-
+def get_offers(url, time):
+    raw_offers = get_raw_offers(get_url(add_time_to_url(url, time)))
+    return (parse_raw_offer(offer) for offer in raw_offers)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='CIAN parser by URL')
     parser.add_argument('url', type=str, help='URL to parse')
+    parser.add_argument('-t', '--time', type=int, help='Set time of last parsing',
+            default=360000)
     args = parser.parse_args()
-    res = get_raw_offers(get_url(args.url))
     with create_database() as db:
-        for offer in res:
-            parse_raw_offer(offer, db)
+        for info, info_id in get_offers(args.url, args.time):
+            write_to_database(info_id, info, db)
