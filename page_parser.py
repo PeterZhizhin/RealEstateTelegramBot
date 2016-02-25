@@ -10,16 +10,17 @@ import requests
 import pdb
 
 table_cookies = {'serp_view_mode': 'table'}
-def add_time_to_url(url, time):
+def change_params(url, **kwargs):
     parsed_url = urlparse(url)
     qs = parse_qs(parsed_url.query, keep_blank_values=True)
-    qs['to_time'] = str(time)
+    for key, value in kwargs.items():
+        qs[key] = value
     return parsed_url.scheme + '://' + parsed_url.hostname +\
         parsed_url.path + '?' + urlencode(qs, doseq=True)
 
 def get_url(url):
     r = requests.get(url, cookies=table_cookies)
-    return bs(r.text)
+    return bs(r.text, 'lxml')
 
 def get_raw_offers(bs_res):
     return bs_res.findAll('tr', {'class': 'offer_container'})
@@ -36,9 +37,15 @@ def create_database():
 
 def write_to_database(entry_id, entry, db):
     if entry_id in db.keys():
-        print("Already in database", entry_id)
+        if entry['url'] != db.get(entry_id)['url']:
+            print("Equal id, but different")
+            print(entry)
+            print(db.get(entry_id))
     else:
         db[entry_id] = entry
+
+def get_count_of_offers(raw_page):
+    return int(raw_page.find('div', {'class': 'serp-above__count'}).find('strong').text)
 
 offer_info_class_lambda = lambda x: x is not None and x.startswith('objects_item_info_col_')
 def parse_raw_offer(offer):
@@ -52,7 +59,7 @@ def parse_raw_offer(offer):
     entry_info['location'] = {}
     loc = info[0].find('input')
     coords = loc.attrs['value']
-    metro = loc.find('div', {'class':'objects_item_metro'})
+    metro = info[0].find('div', {'class':'objects_item_metro'})
     if metro.find('a') is not None:
         metro_name = fix_text(metro.find('a'))
         entry_info['location']['metro'] = {}
@@ -113,15 +120,26 @@ def parse_raw_offer(offer):
     return entry_info, flat_id
 
 def get_offers(url, time):
-    raw_offers = get_raw_offers(get_url(add_time_to_url(url, time)))
-    return (parse_raw_offer(offer) for offer in raw_offers)
+    page_bs = get_url(change_params(url, to_time=time, p=1))
+    # Получаем число предложений
+    num_of_offers = get_count_of_offers(page_bs)
+    # Определяем по ним число страниц
+    raw_offers = get_raw_offers(page_bs)
+    pages = num_of_offers // len(raw_offers)
+    print("Pages total", pages)
+    yield from (parse_raw_offer(offer) for offer in raw_offers)
+    for i in range(2, pages+1):
+        print("Page", i)
+        url = change_params(url, to_time=time, p=i)
+        raw_offers = get_raw_offers(get_url(url))
+        yield from (parse_raw_offer(offer) for offer in raw_offers)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='CIAN parser by URL')
     parser.add_argument('url', type=str, help='URL to parse')
     parser.add_argument('-t', '--time', type=int, help='Set time of last parsing',
-            default=360000)
+            default=360000000000000000000)
     args = parser.parse_args()
     with create_database() as db:
         for info, info_id in get_offers(args.url, args.time):
