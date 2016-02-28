@@ -23,6 +23,7 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logging.getLogger('requests').setLevel(logging.WARNING)
     logger.setLevel(logging.DEBUG)
+    
 
     file_handler = logging.FileHandler(config.log_file)
     file_handler.setLevel(config.file_log_level)
