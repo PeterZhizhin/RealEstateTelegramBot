@@ -7,8 +7,6 @@ import myrequests_cacher
 import re
 import requests
 
-import pdb
-
 table_cookies = {'serp_view_mode': 'table'}
 def change_params(url, **kwargs):
     parsed_url = urlparse(url)

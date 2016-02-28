@@ -7,7 +7,7 @@ def request(api_key, method_name, **wargs):
             method=method_name
         ),
         wargs,
-        timeout=30
+        timeout=5
     )
     return req
 

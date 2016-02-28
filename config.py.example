@@ -1,0 +1,15 @@
+import logging
+#Main 
+api_key = "<your_api_key>"
+users_db_filename = 'users.db'
+log_file = 'bot.log'
+console_log_level = logging.DEBUG
+file_log_level = logging.INFO
+log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# Users
+user_messages_before_ignore = 50
+default_user = {'links': [], 'auth': False, 'ignore_left':user_messages_before_ignore}
+
+# Invites
+invite_length = 20
