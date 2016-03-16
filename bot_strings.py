@@ -19,3 +19,7 @@ get_links_id = 'get_links'
 
 current_links_message = "Список текущих ссылок:"
 no_links_message = "Ссылок нет."
+add_link_success = "Добавление ссылки успешно."
+
+add_link_enter = "Введите ссылку"
+add_link_failed = "Добавление ссылки не удалось. Проверьте её."

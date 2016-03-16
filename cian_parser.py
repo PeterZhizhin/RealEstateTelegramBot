@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup as bs
 from urllib.parse import urlparse, parse_qs, urlencode
-import shelve
 import myrequests_cacher
 import re
 import requests
+import config
 
 table_cookies = {'serp_view_mode': 'table'}
 def change_params(url, **kwargs):
@@ -13,8 +13,14 @@ def change_params(url, **kwargs):
     qs = parse_qs(parsed_url.query, keep_blank_values=True)
     for key, value in kwargs.items():
         qs[key] = value
-    return parsed_url.scheme + '://' + parsed_url.hostname +\
-        parsed_url.path + '?' + urlencode(qs, doseq=True)
+    res = ''
+    if parsed_url.scheme != '':
+        res += parsed_url.scheme + '://'
+    else:
+        res += 'http://'
+    if parsed_url.hostname is not None:
+        res += parsed_url.hostname
+    return res + parsed_url.path + '?' + urlencode(qs, doseq=True)
 
 def get_url(url):
     r = requests.get(url, cookies=table_cookies)
@@ -30,20 +36,15 @@ def fix_text(text):
         text = text.text
     return ' '.join(text.split())
 
-def create_database():
-    return shelve.open('flats.db')
-
 def write_to_database(entry_id, entry, db):
-    if entry_id in db.keys():
-        if entry['url'] != db.get(entry_id)['url']:
+    entry_db = db.find_one({'id': entry_id})
+    if entry_db is not None:
+        if entry['url'] != entry_db['url']:
             print("Equal id, but different")
             print(entry)
-            print(db.get(entry_id))
+            print(entry_db)
     else:
-        db[entry_id] = entry
-
-def get_count_of_offers(raw_page):
-    return int(raw_page.find('div', {'class': 'serp-above__count'}).find('strong').text)
+        db.insert_one(entry)
 
 offer_info_class_lambda = lambda x: x is not None and x.startswith('objects_item_info_col_')
 def parse_raw_offer(offer):
@@ -117,6 +118,31 @@ def parse_raw_offer(offer):
 
     return entry_info, flat_id
 
+cian_url = 'www.cian.ru/cat.php'
+def check_url_correct(url):
+    if cian_url in url:
+        try:
+            page_bs = get_url(change_params(url, to_time=3000, p=1))
+            if 'Ничего не найдено' in page_bs.text:
+                return True
+            raw_offers = get_raw_offers(page_bs)
+            return len(raw_offers) > 0
+        except:
+            return False
+
+def get_new_offers(for_user, url, time=config.cian_default_timeout):
+    db = bot_data_bases.get_flats_db()
+    for offer in get_offers(url, time):
+        entry_db = db.find_one({'id': offer['id']})
+        if entry_db is not None:
+            if offer['comment'] != entry_db['comment']:
+                offer['new'] = False
+                yield offer
+        else:
+            db.insert_one(offer)
+            yield offer
+
+
 def get_offers(url, time):
     page_bs = get_url(change_params(url, to_time=time, p=1))
     # Получаем число предложений
@@ -139,6 +165,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--time', type=int, help='Set time of last parsing',
             default=360000000000000000000)
     args = parser.parse_args()
+    db = bot_data_bases.get_flats_db()
     with create_database() as db:
         for info, info_id in get_offers(args.url, args.time):
             write_to_database(info_id, info, db)

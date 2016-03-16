@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from user import user
+import telegram_api
 import config
 import logging
-import shelve
-import telegram_api
-
-def open_user_db():
-    return shelve.open(config.users_db_filename)
-
-def get_user_from_db(user_dict, db, chat, bot, logger):
+import time
+def get_user(user_dict, chat, bot, logger):
     user_id = chat['id']
     if user_id in user_dict:
         return user_dict[user_id]
     logger.debug('Added user with id ' + str(user_id) + ' to dict')
     callback = bot.return_callback(user_id)
-    u = user(chat, db, callback)
+    u = user(chat, callback)
     user_dict[user_id] = u
     return u
 
@@ -40,11 +36,11 @@ if __name__ == "__main__":
 
     logger.info('Application started')
 
-    bot = telegram_api.Telegram(config.api_key)
+    bot = telegram_api.telegram(config.api_key)
 
     user_dict = {}
-    with open_user_db() as db:
-        while True:
-                for query in bot.getUpdates():
-                    user = get_user_from_db(user_dict, db, query['chat'], bot, logger)
-                    user.process_message(query['text'])
+    while True:
+            logger.debug("Getting updates")
+            for query in bot.get_updates(timeout=30):
+                user = get_user(user_dict, query['chat'], bot, logger)
+                user.process_message(query['text'])
