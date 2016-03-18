@@ -13,13 +13,18 @@ main_help = """Добро пожаловать в бот аренды кварт
 /add_link Добавить ссылку.
 /get_links Получить список текущих ссылок."""
 wrong_command = "Неверная команда. Наберите /help для помощи."
-help_id = 'help'
-add_link_id = 'add_link'
-get_links_id = 'get_links'
+help_id = '/help'
+add_link_id = '/add_link'
+get_links_id = '/get_links'
 
 current_links_message = "Список текущих ссылок:"
 no_links_message = "Ссылок нет."
 add_link_success = "Добавление ссылки успешно."
 
+awaitance_time_exceeded = "Превышено время ожидания. Повторите попытку."
+
 add_link_enter = "Введите ссылку"
-add_link_failed = "Добавление ссылки не удалось. Проверьте её."
+add_link_failed = "Добавление ссылки не удалось. Проверьте её и повторите ещё раз."
+
+add_link_tag_enter = "Введите метку для ссылки. Например: \"1 комната в центре до 30к\" (максимум 30 символов)"
+add_link_tag_wrong_tag = "Метка неверна. Проверьте её длину."
