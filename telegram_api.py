@@ -1,5 +1,8 @@
 import requests
+
 base_url = 'https://api.telegram.org/bot{api_key}/{method}'
+
+
 def request(api_key, method_name, **wargs):
     request_timeout = 30
     if 'timeout' in wargs:
@@ -14,16 +17,19 @@ def request(api_key, method_name, **wargs):
     )
     return req
 
+
 def check_errors(request):
     if request.status_code != 200:
         raise Exception('Telegram request code was not OK.')
     if not request.json()['ok']:
         raise Exception('Telegram request \'ok\' field is not True')
 
+
 def safe_request(api_key, method_name, **wargs):
     r = request(api_key, method_name, **wargs)
     check_errors(r)
     return r.json()['result']
+
 
 class callback:
     def __init__(self, telegram_api, chat_id):
@@ -33,7 +39,8 @@ class callback:
     def function(self, message, **wargs):
         self.telegram.send_message(self.chat_id, message)
 
-class telegram:
+
+class Telegram:
     def __init__(self, api_key):
         self.api_key = api_key
         self.lastUpdate = 0
@@ -47,7 +54,7 @@ class telegram:
 
     def send_message(self, chat_id, text):
         return safe_request(self.api_key, 'sendMessage',
-                chat_id=chat_id, text=text)
+                            chat_id=chat_id, text=text)
 
     def return_callback(self, chat_id):
         return callback(self, chat_id).function

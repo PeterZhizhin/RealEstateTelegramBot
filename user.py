@@ -6,18 +6,21 @@ import invites
 import logging
 import re
 from datetime import datetime
+
 logger = logging.getLogger('user')
 logger.setLevel(logging.DEBUG)
 
-class state_transition_creator:
+
+class StateTransitionCreator:
     @staticmethod
     def create_transition(new_state_tag, **wargs):
-        return (new_state_tag, wargs)
+        return new_state_tag, wargs
 
-class none_state:
+
+class NoneState:
     def __init__(self, user):
         self.user = user
-    
+
     def enter(self):
         self.user.logger.debug('Entered none mode for ' + self.user.user_id)
         self.user.callback(bot_strings.hello_message)
@@ -30,27 +33,28 @@ class none_state:
             if message == bot_strings.start_id:
                 self.user.callback(bot_strings.hello_message)
             self.user.authorized = True
-            return state_transition_creator.create_transition('main')
+            return StateTransitionCreator.create_transition('main')
         else:
-            self.user.callback(bot_strings.auth_failed + 
-                    str(self.user.messages_before_ignore_left))
+            self.user.callback(bot_strings.auth_failed +
+                               str(self.user.messages_before_ignore_left))
 
-class main_state:
+
+class MainState:
     def __init__(self, user):
         self.user = user
         self.state_changes = {
-                    bot_strings.help_id: self.print_hello_message,
-                    bot_strings.add_link_id: lambda:
-                        state_transition_creator.create_transition('add_link_state'),
-                    bot_strings.get_links_id: self.get_links_answer,
-                }
+            bot_strings.help_id: self.print_hello_message,
+            bot_strings.add_link_id: lambda:
+            StateTransitionCreator.create_transition('add_link_state'),
+            bot_strings.get_links_id: self.get_links_answer,
+            bot_strings.set_updates_id: lambda:
+            StateTransitionCreator.create_transition('set_updates_state'),
+        }
 
     def print_hello_message(self):
         self.user.callback(bot_strings.main_help)
 
     def get_links_answer(self):
-        import ipdb
-        # ipdb.set_trace()
         links = self.user.get_links()
         if len(links) == 0:
             self.user.callback(bot_strings.no_links_message)
@@ -73,10 +77,20 @@ class main_state:
         else:
             self.user.callback(bot_strings.wrong_command)
 
-class add_link_state:
+
+class SetUpdatesState:
     def __init__(self, user):
         self.user = user
         self.time = 0
+
+    def enter(self):
+        self.user.callback()
+
+
+class AddLinkState:
+    def __init__(self, user):
+        self.user = user
+        self.time = datetime.now()
 
     def enter(self):
         self.user.callback(bot_strings.add_link_enter)
@@ -84,13 +98,15 @@ class add_link_state:
 
     def update(self, message):
         logger.debug("User " + str(self.user.user_id) + " adding link")
-        if (datetime.now() - self.time).total_seconds()\
-            > config.awaitance:
-                self.user.callback(bot_strings.awaitance_time_exceeded)
-                return state_transition_creator.create_transition('main')
+        if (datetime.now() - self.time).total_seconds() \
+                > config.awaitance:
+            self.user.callback(bot_strings.awaitance_time_exceeded)
+            return StateTransitionCreator.create_transition('main')
+        if message in bot_strings.cancel_id:
+            return StateTransitionCreator.create_transition('main')
         if self.user.check_url_correct(message):
             logger.debug("User " + str(self.user.user_id) + " adding link " + message)
-            return state_transition_creator.create_transition('get_link_tag', link=message)
+            return StateTransitionCreator.create_transition('get_link_tag', link=message)
         else:
             logger.debug("User " + str(self.user.user_id) + " adding link " + message + " was wrong")
             self.user.callback(bot_strings.add_link_failed)
@@ -98,11 +114,12 @@ class add_link_state:
     def exit(self):
         self.time = 0
 
-class get_link_tag_state:
+
+class GetLinkTagState:
     def __init__(self, user):
         self.user = user
         self.time = 0
-        self.link = ""
+        self.link = datetime.now()
 
     def enter(self, **wargs):
         self.user.callback(bot_strings.add_link_tag_enter)
@@ -110,14 +127,16 @@ class get_link_tag_state:
         self.time = datetime.now()
 
     def update(self, message):
-        if (datetime.now() - self.time).total_seconds()\
+        if (datetime.now() - self.time).total_seconds() \
                 > config.awaitance:
             self.user.callback(bot_strings.awaitance_time_exceeded)
-            return state_transition_creator.create_transition('main')
+            return StateTransitionCreator.create_transition('main')
+        if message in bot_strings.cancel_id:
+            return StateTransitionCreator.create_transition('main')
         if self.user.check_tag_correct(message):
             self.user.try_add_link(self.link, message)
             self.user.callback(bot_strings.add_link_success)
-            return state_transition_creator.create_transition('main')
+            return StateTransitionCreator.create_transition('main')
         else:
             self.user.callback(bot_strings.add_link_tag_wrong_tag)
 
@@ -125,7 +144,8 @@ class get_link_tag_state:
         self.time = 0
         self.link = ""
 
-class user:
+
+class User:
     def __init__(self, chat, callback):
         user_id = chat['id']
         # Getting info from db
@@ -151,26 +171,21 @@ class user:
 
         self.callback = callback
         self.states = {
-                'none': none_state(self),
-                'main': main_state(self),
-                'add_link_state': add_link_state(self),
-                'get_link_tag': get_link_tag_state(self),
-                }
+            'none': NoneState(self),
+            'main': MainState(self),
+            'add_link_state': AddLinkState(self),
+            'get_link_tag': GetLinkTagState(self),
+        }
         self.current_state_mark = 'none'
         if self._authorized:
             self.current_state = self.states['main']
         else:
             self.current_state = self.states['none']
 
-    def unset_updates_handler_if_needed(self):
-        if self.messages_before_ignore_left <= 0:
-            self.process_message = self.null_process_message
-
     def pull_auth_message(self, message):
         self.messages_before_ignore_left -= 1
         if invites.pull_invite(message):
             return True
-        self.unset_updates_handler_if_needed()
         self.db.update_one(self.db_filter, {'$inc': {'ignore_left': -1}})
         return False
 
@@ -183,28 +198,30 @@ class user:
         self._authorized = value
         if value:
             self.db.update_one(self.db_filter, {'$set': {'auth': True},
-                '$unset': {'ignore_left': ''}})
+                                                '$unset': {'ignore_left': ''}})
         else:
-            self.db.update_one(self.db_filter, {'$set': {'auth': False},
-                '$set': {'ignore_left': config.user_messages_before_ignore}})
+            self.db.update_one(self.db_filter, {'$set': {'auth': False,
+                                                         'ignore_left': config.user_messages_before_ignore}})
 
     def get_links(self):
         return self.links
 
-    def check_url_correct(self, link):
+    @staticmethod
+    def check_url_correct(link):
         return cian_parser.check_url_correct(link)
 
-    def check_tag_correct(self, tag):
-        return True
+    @staticmethod
+    def check_tag_correct(tag):
+        return len(tag) < config.max_tag_len
 
     def try_add_link(self, link, tag):
         if cian_parser.check_url_correct(link):
-            logger.debug("Adding link of user " + str(self.user_id)\
-                    + " to database\n" + link\
-                    + " with tag " + tag)
-            self.links.append(link)
-            self.db.update_one(self.db_filter, 
-                    {'$push': {'links': (link, tag)}})
+            logger.debug("Adding link of user " + str(self.user_id) +
+                         " to database\n" + link +
+                         " with tag " + tag)
+            self.links.append([link, tag])
+            self.db.update_one(self.db_filter,
+                               {'$push': {'links': (link, tag)}})
             return True
         return False
 
@@ -222,6 +239,7 @@ class user:
         pass
 
     def process_message(self, message_text):
-        new_state = self.current_state.update(message_text)
-        if new_state is not None:
-            self.change_state(new_state)
+        if self.messages_before_ignore_left > 0:
+            new_state = self.current_state.update(message_text)
+            if new_state is not None:
+                self.change_state(new_state)

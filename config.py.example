@@ -1,7 +1,6 @@
 import logging
-#Main 
-api_key = "<your_api_key>"
-users_db_filename = 'users.db'
+# Main
+api_key = "<YOUR API KEY>"
 log_file = 'bot.log'
 console_log_level = logging.DEBUG
 file_log_level = logging.INFO
@@ -13,3 +12,20 @@ default_user = {'links': [], 'auth': False, 'ignore_left':user_messages_before_i
 
 # Invites
 invite_length = 20
+
+# Mongo
+mongo_url = '127.0.0.1'
+mongo_port = 27017
+mongo_database_name = '<YOUR DB NAME>'
+users_db = 'users'
+invites_db = 'invites'
+flats_db = 'flats'
+
+# CIAN parser
+cian_default_timeout = 7200
+
+# Input awaitance time (seconds)
+awaitance = 120
+
+# Max length of a tag
+max_tag_len = 30

@@ -5,12 +5,16 @@ import random
 import string
 import config
 from sys import stdin
+
 db = None
+
+
 def get_db():
     global db
     if db is None:
         db = bot_data_bases.get_invites_db()
     return db
+
 
 def pull_invite(invite):
     db = get_db()
@@ -20,11 +24,14 @@ def pull_invite(invite):
         return True
     return False
 
+
 def generate_random_str(N):
     return ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
+
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description='Invite generator for realty telegram bot')
     parser.add_argument('-a', '--add', help='Add invites from stdin', action="store_true")
     parser.add_argument('-l', '--list', help='List all current available invites', default=1000, type=int)

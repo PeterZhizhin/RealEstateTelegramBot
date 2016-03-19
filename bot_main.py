@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from user import user
+from user import User
 import telegram_api
 import config
 import logging
 import time
+
+
 def get_user(user_dict, chat, bot, logger):
     user_id = chat['id']
     if user_id in user_dict:
         return user_dict[user_id]
     logger.debug('Added user with id ' + str(user_id) + ' to dict')
     callback = bot.return_callback(user_id)
-    u = user(chat, callback)
+    u = User(chat, callback)
     user_dict[user_id] = u
     return u
+
 
 if __name__ == "__main__":
     logger = logging.getLogger()
     logging.getLogger('requests').setLevel(logging.WARNING)
     logger.setLevel(logging.DEBUG)
-    
 
     file_handler = logging.FileHandler(config.log_file)
     file_handler.setLevel(config.file_log_level)
@@ -36,11 +38,11 @@ if __name__ == "__main__":
 
     logger.info('Application started')
 
-    bot = telegram_api.telegram(config.api_key)
+    bot = telegram_api.Telegram(config.api_key)
 
     user_dict = {}
     while True:
-            logger.debug("Getting updates")
-            for query in bot.get_updates(timeout=30):
-                user = get_user(user_dict, query['chat'], bot, logger)
-                user.process_message(query['text'])
+        logger.debug("Getting updates")
+        for query in bot.get_updates(timeout=30):
+            user = get_user(user_dict, query['chat'], bot, logger)
+            User.process_message(query['text'])
