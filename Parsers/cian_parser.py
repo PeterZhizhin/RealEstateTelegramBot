@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import bot_data_bases
-from bs4 import BeautifulSoup as bs
 from urllib.parse import urlparse, parse_qs, urlencode
-import myrequests_cacher
+
+import config
 import re
 import requests
-import config
+from Databases import Databases
+from bs4 import BeautifulSoup as bs
 
 table_cookies = {'serp_view_mode': 'table'}
 
@@ -145,7 +145,7 @@ def check_url_correct(url):
 
 
 def get_new_offers(for_user, url, time=config.cian_default_timeout):
-    db = bot_data_bases.get_flats_db()
+    db = Databases.get_flats_db()
     for offer in get_offers(url, time):
         entry_db = db.find_one({'id': offer['id']})
         if entry_db is not None:
@@ -181,6 +181,6 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--time', type=int, help='Set time of last parsing',
                         default=360000000000000000000)
     args = parser.parse_args()
-    db = bot_data_bases.get_flats_db()
+    db = Databases.get_flats_db()
     for info, info_id in get_offers(args.url, args.time):
         write_to_database(info_id, info, db)

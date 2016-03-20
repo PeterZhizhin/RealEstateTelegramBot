@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import bot_data_bases
-import random
 import string
-import config
 from sys import stdin
 
-db = None
-
-
-def get_db():
-    global db
-    if db is None:
-        db = bot_data_bases.get_invites_db()
-    return db
-
-
-def pull_invite(invite):
-    db = get_db()
-    invite = db.find_one({'id': invite})
-    if invite is not None:
-        db.delete_one({'_id': invite['_id']})
-        return True
-    return False
+import config
+import random
+from Databases import Databases
 
 
 def generate_random_str(N):
     return ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(N))
+
+
+class InvitesManager:
+    db = None
+
+    @staticmethod
+    def set_db():
+        if InvitesManager.db is None:
+            InvitesManager.db = Databases.get_invites_db()
+
+    @staticmethod
+    def pull_invite(invite):
+        InvitesManager.set_db()
+        invite = db.find_one({'id': invite})
+        if invite is not None:
+            db.delete_one({'_id': invite['_id']})
+            return True
+        return False
 
 
 if __name__ == "__main__":

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from user import User
-import telegram_api
-import config
 import logging
-import time
+
+
+from Databases import Databases
+import config
+from TelegramAPI import Telegram
+from User import User
 
 
 def get_user(user_dict, chat, bot, logger):
@@ -38,11 +40,13 @@ if __name__ == "__main__":
 
     logger.info('Application started')
 
-    bot = telegram_api.Telegram(config.api_key)
+    bot = Telegram(config.api_key)
+
+    User.set_db(Databases.get_users_db())
 
     user_dict = {}
     while True:
         logger.debug("Getting updates")
         for query in bot.get_updates(timeout=30):
             user = get_user(user_dict, query['chat'], bot, logger)
-            User.process_message(query['text'])
+            user.process_message(query['text'])

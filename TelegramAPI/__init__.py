@@ -57,4 +57,4 @@ class Telegram:
                             chat_id=chat_id, text=text)
 
     def return_callback(self, chat_id):
-        return callback(self, chat_id).function
+        return lambda message: self.send_message(chat_id, message)
