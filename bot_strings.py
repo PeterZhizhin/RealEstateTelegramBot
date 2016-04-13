@@ -41,3 +41,27 @@ set_updates_wrong_time_str = "Кажется, это не время в мину
 set_updates_wrong_duration = "Минимумальное время между обновлениями -- это 60 минут. Попробуйте ещё раз." \
                              " /cancel для отмены."
 set_updates_success = "Частота обновлений успешна установлена."
+
+
+base_for_sending_flat = """*Адрес*
+Метро: {metro}
+Адрес: {address}
+
+*Информация*
+Объект: {object}
+Площади: {sizes_total}
+Этаж: {floor}
+
+*Цена*
+{price} ({price_info})
+Процент: {percent}
+
+*Дополнительные сведения*
+{additional_info}
+
+*Комментарий*
+{comment}
+
+*Контакты*
+{contacts}
+"""

@@ -1,10 +1,10 @@
 import bot_strings
 from .BasicState import BasicState
-from . import state_tags
+from . import StateTags
 
 
 class SetUpdatesState(BasicState):
-    tag = state_tags.SET_UPDATES
+    tag = StateTags.SET_UPDATES
 
     def __init__(self, user):
         super().__init__(user)
@@ -15,13 +15,13 @@ class SetUpdatesState(BasicState):
 
     def update(self, message):
         if message == bot_strings.cancel_id:
-            return BasicState.create_transition(state_tags.MAIN)
+            return BasicState.create_transition(StateTags.MAIN)
         try:
-            time = int(message)
+            time = float(message)
             if self.user.check_time_correct(time):
                 self.user.updates_duration = time
                 self.user.callback(bot_strings.set_updates_success)
-                return BasicState.create_transition(state_tags.MAIN)
+                return BasicState.create_transition(StateTags.MAIN)
             else:
                 self.user.callback(bot_strings.set_updates_wrong_duration)
         except ValueError:

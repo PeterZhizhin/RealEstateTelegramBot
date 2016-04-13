@@ -62,12 +62,13 @@ def parse_raw_offer(offer):
     info = [i.find('div', {'class': 'objects_item_info_col_w'}) for i in info]
 
     # Create dict of all entries
-    entry_info = {}
+    entry_info = dict()
 
     # col_1 -- расположение
     entry_info['location'] = {}
     loc = info[0].find('input')
     coords = loc.attrs['value']
+    entry_info['location']['coordinates'] = coords
     metro = info[0].find('div', {'class': 'objects_item_metro'})
     if metro.find('a') is not None:
         metro_name = fix_text(metro.find('a'))
@@ -76,7 +77,7 @@ def parse_raw_offer(offer):
         metro_descr = fix_text(metro.find('span', {'class': 'objects_item_metro_comment'}))
         entry_info['location']['metro']['description'] = metro_descr
 
-    address_bs = loc.findAll('div', {'class': 'objects_item_addr'})
+    address_bs = offer.findAll('div', {'class': 'objects_item_addr'})
     address_str = [fix_text(i) for i in address_bs]
     entry_info['location']['address'] = address_str
 
@@ -126,7 +127,7 @@ def parse_raw_offer(offer):
     user_id = re.match(".*id_user=([0-9]*)&", user_url).groups()[0]
     entry_info['user']['id'] = int(user_id)
 
-    return entry_info, flat_id
+    return entry_info
 
 
 cian_url = 'www.cian.ru/cat.php'
@@ -144,17 +145,20 @@ def check_url_correct(url):
             return False
 
 
-def get_new_offers(for_user, url, time=config.cian_default_timeout):
+def get_new_offers(url, time=config.cian_default_timeout):
     db = Databases.get_flats_db()
     for offer in get_offers(url, time):
         entry_db = db.find_one({'id': offer['id']})
-        if entry_db is not None:
-            if offer['comment'] != entry_db['comment']:
-                offer['new'] = False
-                yield offer
-        else:
+        if entry_db is None:
             db.insert_one(offer)
-            yield offer
+        yield offer
+
+
+def get_count_of_offers(page_bs):
+    count_re = re.compile(".*?([1-9][0-9])\s*объявлен")
+    count_entry = page_bs.find("meta", attrs={'content': lambda x: count_re.search(x)})
+    count = count_re.match(count_entry.attrs['content']).groups()[0]
+    return int(count)
 
 
 def get_offers(url, time):
@@ -163,14 +167,15 @@ def get_offers(url, time):
     num_of_offers = get_count_of_offers(page_bs)
     # Определяем по ним число страниц
     raw_offers = get_raw_offers(page_bs)
-    pages = num_of_offers // len(raw_offers)
-    print("Pages total", pages)
     yield from (parse_raw_offer(offer) for offer in raw_offers)
-    for i in range(2, pages + 1):
-        print("Page", i)
+    num_of_offers -= len(raw_offers)
+    i = 2
+    while num_of_offers > 0:
         url = change_params(url, to_time=time, p=i)
         raw_offers = get_raw_offers(get_url(url))
         yield from (parse_raw_offer(offer) for offer in raw_offers)
+        num_of_offers -= len(raw_offers)
+        i += 1
 
 
 if __name__ == "__main__":

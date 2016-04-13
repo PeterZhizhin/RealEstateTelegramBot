@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 import logging
 
-
 from Databases import Databases
 import config
 from TelegramAPI import Telegram
 from User import User
+from UpdatesManager import UpdatesManager
 
 
 def get_user(user_dict, chat, bot, logger):
@@ -41,9 +41,8 @@ if __name__ == "__main__":
     logger.info('Application started')
 
     bot = Telegram(config.api_key)
-
+    UpdatesManager.init_manager()
     User.set_db(Databases.get_users_db())
-
     user_dict = {}
     while True:
         logger.debug("Getting updates")

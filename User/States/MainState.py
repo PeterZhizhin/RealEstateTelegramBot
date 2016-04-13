@@ -1,27 +1,27 @@
 from .BasicState import BasicState
-from . import state_tags
+from . import StateTags
 import bot_strings
 
 
 class MainState(BasicState):
-    tag = state_tags.MAIN
+    tag = StateTags.MAIN
 
     def __init__(self, user):
         super().__init__(user)
         self.state_changes = {
             bot_strings.help_id: self.print_hello_message,
             bot_strings.add_link_id: lambda:
-            BasicState.create_transition(state_tags.ADD_LINK),
+            BasicState.create_transition(StateTags.ADD_LINK),
             bot_strings.get_links_id: self.get_links_answer,
             bot_strings.set_updates_id: lambda:
-            BasicState.create_transition(state_tags.SET_UPDATES),
+            BasicState.create_transition(StateTags.SET_UPDATES),
         }
 
     def print_hello_message(self):
         self.user.callback(bot_strings.main_help)
 
     def get_links_answer(self):
-        links = self.user.get_links()
+        links = self.user.links
         if len(links) == 0:
             self.user.callback(bot_strings.no_links_message)
             return

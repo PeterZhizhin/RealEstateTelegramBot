@@ -1,10 +1,10 @@
 from .BasicState import BasicState
 import bot_strings
-from . import state_tags
+from . import StateTags
 
 
 class NoneState(BasicState):
-    tag = state_tags.NONE
+    tag = StateTags.NONE
 
     def enter(self):
         self.user.logger.debug('Entered none mode for ' + self.user.user_id)
@@ -18,7 +18,7 @@ class NoneState(BasicState):
             if message == bot_strings.start_id:
                 self.user.callback(bot_strings.hello_message)
             self.user.authorized = True
-            return BasicState.create_transition(state_tags.MAIN)
+            return BasicState.create_transition(StateTags.MAIN)
         else:
             self.user.callback(bot_strings.auth_failed +
                                str(self.user.messages_before_ignore_left))
