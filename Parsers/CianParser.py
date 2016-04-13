@@ -130,15 +130,20 @@ def parse_raw_offer(offer):
     return entry_info
 
 
-cian_url = 'www.cian.ru/cat.php'
+cian_url = 'cian.ru/cat.php'
+
+
+def check_not_found(page_bs):
+    not_found = page_bs.find("div", attrs={"class": "serps-header_nothing-found__title"})
+    if not_found:
+        return 'Ничего не найдено' in not_found.text
+    return False
 
 
 def check_url_correct(url):
     if cian_url in url:
         try:
-            page_bs = get_url(change_params(url, to_time=3000, p=1))
-            if 'Ничего не найдено' in page_bs.text:
-                return True
+            page_bs = get_url(change_params(url, totime=3000, p=1))
             raw_offers = get_raw_offers(page_bs)
             return len(raw_offers) > 0
         except:
@@ -155,23 +160,28 @@ def get_new_offers(url, time=config.cian_default_timeout):
 
 
 def get_count_of_offers(page_bs):
+    if check_not_found(page_bs):
+        return 0
     count_re = re.compile(".*?([1-9][0-9])\s*объявлен")
     count_entry = page_bs.find("meta", attrs={'content': lambda x: count_re.search(x)})
+    assert count_entry is not None
     count = count_re.match(count_entry.attrs['content']).groups()[0]
     return int(count)
 
 
 def get_offers(url, time):
-    page_bs = get_url(change_params(url, to_time=time, p=1))
+    page_bs = get_url(change_params(url, totime=time, p=1))
     # Получаем число предложений
     num_of_offers = get_count_of_offers(page_bs)
     # Определяем по ним число страниц
+    if num_of_offers == 0:
+        return
     raw_offers = get_raw_offers(page_bs)
     yield from (parse_raw_offer(offer) for offer in raw_offers)
     num_of_offers -= len(raw_offers)
     i = 2
     while num_of_offers > 0:
-        url = change_params(url, to_time=time, p=i)
+        url = change_params(url, totime=time, p=i)
         raw_offers = get_raw_offers(get_url(url))
         yield from (parse_raw_offer(offer) for offer in raw_offers)
         num_of_offers -= len(raw_offers)

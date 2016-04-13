@@ -7,17 +7,7 @@ import config
 from TelegramAPI import Telegram
 from User import User
 from UpdatesManager import UpdatesManager
-
-
-def get_user(user_dict, chat, bot, logger):
-    user_id = chat['id']
-    if user_id in user_dict:
-        return user_dict[user_id]
-    logger.debug('Added user with id ' + str(user_id) + ' to dict')
-    callback = bot.return_callback(user_id)
-    u = User(chat, callback)
-    user_dict[user_id] = u
-    return u
+from User.UserManager import UserManager
 
 
 if __name__ == "__main__":
@@ -41,11 +31,12 @@ if __name__ == "__main__":
     logger.info('Application started')
 
     bot = Telegram(config.api_key)
+    UserManager.set_bot(bot)
     UpdatesManager.init_manager()
     User.set_db(Databases.get_users_db())
     user_dict = {}
     while True:
         logger.debug("Getting updates")
         for query in bot.get_updates(timeout=30):
-            user = get_user(user_dict, query['chat'], bot, logger)
+            user = UserManager.get_or_create_user(query['chat']['id'])
             user.process_message(query['text'])

@@ -17,3 +17,7 @@ class Databases:
     @staticmethod
     def get_flats_db():
         return Databases.mongo[config.flats_db]
+
+    @staticmethod
+    def get_user_links_db():
+        return Databases.mongo[config.user_links_db]

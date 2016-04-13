@@ -2,10 +2,10 @@ import logging
 
 import bot_strings
 import config
+from Databases.Flats import LinksDBManager
 from Databases.Invites import InvitesManager
 from Parsers import CianParser
 from .States import StateMachine, StateTags
-from UpdatesManager import UpdatesManager
 
 logger = logging.getLogger('user')
 logger.setLevel(logging.DEBUG)
@@ -18,8 +18,7 @@ class User:
     def set_db(db):
         User.db = db
 
-    def __init__(self, chat, callback):
-        user_id = chat['id']
+    def __init__(self, user_id, callback):
         # Getting info from db
         self.db_filter = {'id': user_id}
         data = User.db.find_one(self.db_filter)
@@ -45,9 +44,7 @@ class User:
         self._authorized = data['auth']
         self.messages_before_ignore_left = data['ignore_left']
         self._updates_duration = data['updates_frequency']
-        self._links = {User.get_id(): link for link in data['links']}
-        for link_id, link in self._links.items():
-            self.subscribe_to_link(link_id, link[0])
+        self._links = list(LinksDBManager.get_user_links(user_id))
 
         self.callback = callback
         self.state_machine = StateMachine(self,
@@ -76,21 +73,8 @@ class User:
                                                                comment=update['comment'],
                                                                contacts=update['contacts'])
             self.callback(message)
-        User.db.update_one(self.db_filter, {"$push": {'received_links': new_links}})
-
-    def subscribe_to_link(self, unique_id, link):
-        logger.debug("Subscribing to updates user " + str(self.user_id) +
-                     " to link " + str(link))
-        UpdatesManager.subscribe(unique_id, self.new_links_acquired_event,
-                                 lambda: CianParser.get_new_offers(link),
-                                 self.updates_duration * 60)
-
-    current_id = 0
-
-    @staticmethod
-    def get_id():
-        User.current_id += 1
-        return User.current_id
+        if len(new_links) > 0:
+            User.db.update_one(self.db_filter, {"$pushAll": {'received_links': list(new_links)}})
 
     def pull_auth_message(self, message):
         self.messages_before_ignore_left -= 1
@@ -107,6 +91,9 @@ class User:
     def updates_duration(self, value):
         self._updates_duration = value
         User.db.update_one(self.db_filter, {'$set': {'updates_frequency': value}})
+
+        for link in LinksDBManager.get_user_links(self.user_id):
+            LinksDBManager.update_frequency(link['_id'], value)
 
     @property
     def authorized(self):
@@ -135,18 +122,14 @@ class User:
 
     @staticmethod
     def check_time_correct(time):
-        return isinstance(time, float) and time >= config.min_time_update_len
+        return isinstance(time, int) and time >= config.min_time_update_len
 
-    def try_add_link(self, link, tag):
-        if CianParser.check_url_correct(link):
-            logger.debug("Adding link of user " + str(self.user_id) +
-                         " to database\n" + link +
-                         " with tag " + tag)
-            self.links[User.get_id()] = [link, tag]
-            User.db.update_one(self.db_filter,
-                               {'$push': {'links': (link, tag)}})
-            return True
-        return False
+    def add_link(self, link, tag):
+        logger.debug("Adding link of user " + str(self.user_id) +
+                     " to database\n" + link +
+                     " with tag " + tag)
+        self._links.append(LinksDBManager.add_user_link(self.user_id, link, tag,
+                                                        self.updates_duration, 'CIAN'))
 
     def process_message(self, message_text):
         if self.messages_before_ignore_left > 0:

@@ -17,7 +17,7 @@ class SetUpdatesState(BasicState):
         if message == bot_strings.cancel_id:
             return BasicState.create_transition(StateTags.MAIN)
         try:
-            time = float(message)
+            time = int(message)
             if self.user.check_time_correct(time):
                 self.user.updates_duration = time
                 self.user.callback(bot_strings.set_updates_success)

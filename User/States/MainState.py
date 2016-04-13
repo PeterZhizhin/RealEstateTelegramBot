@@ -27,7 +27,7 @@ class MainState(BasicState):
             return
         total_string = bot_strings.current_links_message + '\n'
         for link in links:
-            total_string += link[1] + '\n'
+            total_string += link['tag'] + '\n'
         total_string = total_string.strip()
         self.user.callback(total_string)
 

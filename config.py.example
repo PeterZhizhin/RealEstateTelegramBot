@@ -9,8 +9,7 @@ log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 # Users
 user_messages_before_ignore = 50
-default_user = {'links': [], 'received_links': [],
-                'auth': False,
+default_user = {'auth': False, 'received_links': [],
                 'ignore_left': user_messages_before_ignore,
                 'updates_frequency': 60}
 
@@ -22,6 +21,7 @@ mongo_url = '127.0.0.1'
 mongo_port = 27017
 mongo_database_name = 'telegram_realty_bot_db'
 users_db = 'users'
+user_links_db = 'user_links'
 invites_db = 'invites'
 flats_db = 'flats'
 
@@ -34,6 +34,5 @@ awaitance = 120
 # Max length of a tag
 max_tag_len = 30
 
-# Minimum update duration
-min_time_update_len = 0.1
-
+# Minimum update duration (minutes)
+min_time_update_len = 60

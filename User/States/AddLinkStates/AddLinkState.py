@@ -26,7 +26,7 @@ class AddLinkState(BasicState):
             return BasicState.create_transition(StateTags.MAIN)
         if self.user.check_url_correct(message):
             super().logger.debug("User " + str(self.user.user_id) + " adding link " + message)
-            return BasicState.create_transition('get_link_tag', link=message)
+            return BasicState.create_transition(StateTags.ADD_LINK_TAG, link=message)
         else:
             super().logger.debug("User " + str(self.user.user_id) + " adding link " + message + " was wrong")
             self.user.callback(bot_strings.add_link_failed)
