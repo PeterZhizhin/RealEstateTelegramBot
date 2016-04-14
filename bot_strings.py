@@ -1,3 +1,5 @@
+import re
+
 # User
 # None state
 hello_message = "Добро пожаловать в бот аренды. Для продолжения введите инвайт."
@@ -42,7 +44,6 @@ set_updates_wrong_duration = "Минимумальное время между �
                              " /cancel для отмены."
 set_updates_success = "Частота обновлений успешна установлена."
 
-
 base_for_sending_flat = """*Адрес*
 Метро: {metro}
 Адрес: {address}
@@ -65,3 +66,7 @@ base_for_sending_flat = """*Адрес*
 *Контакты*
 {contacts}
 """
+go_to_flat_by_url_caption = "Открыть в браузере"
+base_for_sending_preview = "{location} {price} {info_cmd}"
+cian_base_cmd = "/cian{id}"
+cian_cmd_regexp = re.compile("\/cian([0-9]+)")

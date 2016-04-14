@@ -1,3 +1,5 @@
+import json
+
 import requests
 
 base_url = 'https://api.telegram.org/bot{api_key}/{method}'
@@ -19,10 +21,14 @@ def request(api_key, method_name, **wargs):
 
 
 def check_errors(request):
+    if not request.json()['ok']:
+        js = request.json()
+        raise Exception(
+            'Telegram request \'ok\' field is not True.\n Resulted status code: {}.\n Description: {}'.format(
+                js['error_code'],
+                js['description']))
     if request.status_code != 200:
         raise Exception('Telegram request code was not OK. Resulted code: {}'.format(request.status_code))
-    if not request.json()['ok']:
-        raise Exception('Telegram request \'ok\' field is not True')
 
 
 def safe_request(api_key, method_name, **wargs):
@@ -62,6 +68,23 @@ class MessageFunctionObject:
             self.msg['parse_mode'] = 'HTML'
         else:
             self.msg.pop('parse_mode', None)
+
+    def add_markup(self, markup):
+        self.msg['reply_markup'] = json.dumps(markup)
+
+    @staticmethod
+    def inline_keyboard(keyboard):
+        return {'inline_keyboard': keyboard}
+
+    @staticmethod
+    def inline_text(text):
+        return {'text': text}
+
+    @staticmethod
+    def inline_url(text, url):
+        a = MessageFunctionObject.inline_text(text)
+        a['url'] = url
+        return a
 
     def __call__(self, message_text):
         self.msg['text'] = message_text

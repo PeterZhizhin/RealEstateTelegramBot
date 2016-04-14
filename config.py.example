@@ -1,7 +1,7 @@
 import logging
 
 # Main
-api_key = "<API KEY>"
+api_key = "169669071:AAEfjg_7sJhTzYfIaZ-H_TNP8yHdxhMw8gU"
 log_file = 'bot.log'
 console_log_level = logging.DEBUG
 file_log_level = logging.INFO
@@ -35,4 +35,4 @@ awaitance = 120
 max_tag_len = 30
 
 # Minimum update duration (minutes)
-min_time_update_len = 60
+min_time_update_len = 30

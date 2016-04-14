@@ -1,6 +1,6 @@
 import threading
 import logging
-from Databases.Flats import LinksDBManager
+from Databases.UserLinks import LinksDBManager
 from Parsers import CianParser
 from User.UserManager import UserManager
 

@@ -2,7 +2,8 @@ import logging
 
 import bot_strings
 import config
-from Databases.Flats import LinksDBManager
+from Databases.Flats import FlatsDB
+from Databases.UserLinks import LinksDBManager
 from Databases.Invites import InvitesManager
 from Parsers import CianParser
 from .States import StateMachine, StateTags
@@ -52,27 +53,44 @@ class User:
                                           self._authorized
                                           else StateTags.NONE)
 
+    def send_offer_info(self, offer_id):
+        offer = FlatsDB.get_flat(offer_id)
+        metro = "{} ({})".format(offer['location']['metro']['name'],
+                                 offer['location']['metro']['description']) \
+            if 'metro' in offer['location'] else "Метро нет"
+        sizes_info = ", ".join(offer['sizes'])
+        message = bot_strings.base_for_sending_flat.format(metro=metro,
+                                                           address=", ".join(offer['location']['address']),
+                                                           object=offer['object'], sizes_total=sizes_info,
+                                                           floor=offer['floor'], price=offer['price'][0],
+                                                           price_info=offer['price'][2], percent=offer['fee'],
+                                                           additional_info=", ".join(offer['info']),
+                                                           comment=offer['comment'],
+                                                           contacts=offer['contacts'])
+        self.callback.markdown = True
+        self.callback.add_markup(
+            self.callback.inline_keyboard([[self.callback.inline_url(bot_strings.go_to_flat_by_url_caption,
+                                                                     offer['url'])]]))
+        self.callback(message)
+
     def new_links_acquired_event(self, updates):
         logger.debug("Sending new offers to user " + str(self.user_id))
         received_links = set(User.db.find_one(self.db_filter)['received_links'])
         new_links = set()
         required_updates = (x for x in updates if x['id'] not in received_links)
+        message = ""
         for update in required_updates:
             new_links.add(update['id'])
-            self.callback.markdown = True
-            metro = "{} ({})".format(update['location']['metro']['name'],
-                                     update['location']['metro']['description']) \
-                if 'metro' in update['location'] else "Нет"
-            sizes_info = ", ".join(update['sizes'])
-            message = bot_strings.base_for_sending_flat.format(metro=metro,
-                                                               address=", ".join(update['location']['address']),
-                                                               object=update['object'], sizes_total=sizes_info,
-                                                               floor=update['floor'], price=update['price'][0],
-                                                               price_info=update['price'][2], percent=update['fee'],
-                                                               additional_info=", ".join(update['info']),
-                                                               comment=update['comment'],
-                                                               contacts=update['contacts'])
-            self.callback(message)
+            if 'metro' in update['location']:
+                metro = update['location']['metro']
+                location = "{} ({})".format(metro['name'], metro['description'])
+            else:
+                location = update['location']['address'][:-2]
+            price = update['price'][0]
+            message += bot_strings.base_for_sending_preview.format(location=location, price=price,
+                                                                   info_cmd=bot_strings.cian_base_cmd.format(
+                                                                       id=update['id'])) + '\n'
+        self.callback(message)
         if len(new_links) > 0:
             User.db.update_one(self.db_filter, {"$pushAll": {'received_links': list(new_links)}})
 
@@ -110,7 +128,7 @@ class User:
 
     @property
     def links(self):
-        return self._links.values()
+        return self._links
 
     @staticmethod
     def check_url_correct(link):

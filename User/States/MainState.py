@@ -10,11 +10,9 @@ class MainState(BasicState):
         super().__init__(user)
         self.state_changes = {
             bot_strings.help_id: self.print_hello_message,
-            bot_strings.add_link_id: lambda:
-            BasicState.create_transition(StateTags.ADD_LINK),
+            bot_strings.add_link_id: lambda: BasicState.create_transition(StateTags.ADD_LINK),
             bot_strings.get_links_id: self.get_links_answer,
-            bot_strings.set_updates_id: lambda:
-            BasicState.create_transition(StateTags.SET_UPDATES),
+            bot_strings.set_updates_id: lambda: BasicState.create_transition(StateTags.SET_UPDATES),
         }
 
     def print_hello_message(self):
@@ -34,8 +32,17 @@ class MainState(BasicState):
     def enter(self):
         self.print_hello_message()
 
+    def check_offer_tags(self, message):
+        match = bot_strings.cian_cmd_regexp.match(message)
+        if match is not None:
+            offer_id = int(match.groups()[0])
+            self.user.send_offer_info(offer_id)
+            return True
+        return False
+
     def update(self, message):
+        message = message.strip()
         if message in self.state_changes:
             return self.state_changes[message]()
-        else:
+        elif not self.check_offer_tags(message):
             self.user.callback(bot_strings.wrong_command)
