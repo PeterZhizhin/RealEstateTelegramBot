@@ -13,4 +13,3 @@ requests
 requests-cache
 simplegeneric
 traitlets
-lxml
