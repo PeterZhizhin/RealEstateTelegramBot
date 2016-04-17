@@ -1,6 +1,3 @@
-docker stop mongo-container
-docker rm mongo-container
-docker run --name mongo-container -d mongo:latest
-docker stop telegram_realty
-docker rm telegram_realty
+# Uncomment if need to run mongo
+# docker run -v /root/mongodb/:/data/db --name mongo-container -d mongo:latest --dbpath=/data/db
 docker run --name telegram_realty --link mongo-container:localhost -v $(pwd):/source -d telegram_realty
