@@ -13,6 +13,7 @@ from User.UserManager import UserManager
 if __name__ == "__main__":
     logger = logging.getLogger()
     logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
     logger.setLevel(logging.DEBUG)
 
     file_handler = logging.FileHandler(config.log_file)
