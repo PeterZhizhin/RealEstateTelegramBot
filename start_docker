@@ -1,2 +1,2 @@
 docker run --rm --name mongo-container -d mongo:latest
-docker run --rm -d -v $(pwd):/source --link mongo-container:localhost telegram_realty
+docker run --rm --link mongo-container:localhost -v $(pwd):/source -d telegram_realty
