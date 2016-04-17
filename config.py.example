@@ -2,7 +2,7 @@ import logging
 
 # Main
 api_key = "<API-KEY>"
-admin_id = "<ADMIN-ID>"
+admin_id = <ADMIN-ID-INT>
 log_file = 'bot.log'
 console_log_level = logging.DEBUG
 file_log_level = logging.INFO
