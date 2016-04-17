@@ -53,6 +53,14 @@ class User:
                                           self._authorized
                                           else StateTags.NONE)
 
+    def invoke_invites(self):
+        invites = [invite['id'] for invite in InvitesManager.get_invites()]
+        if len(invites) < config.default_invites_count:
+            diff = config.default_invites_count - len(invites)
+            InvitesManager.insert_random_invites(diff, config.invite_length)
+            invites = [invite['id'] for invite in InvitesManager.get_invites()]
+        self.callback("\n".join(invites))
+
     def send_offer_info(self, offer_id):
         offer = FlatsDB.get_flat(offer_id)
         metro = "{} ({})".format(offer['location']['metro']['name'],

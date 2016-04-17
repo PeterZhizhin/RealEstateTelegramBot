@@ -4,7 +4,6 @@ ipdb
 ipython
 ipython-genutils
 logger
-lxml
 path.py
 pexpect
 pickleshare
@@ -14,3 +13,4 @@ requests
 requests-cache
 simplegeneric
 traitlets
+lxml

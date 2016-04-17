@@ -1,3 +1,4 @@
+import config
 from .BasicState import BasicState
 from . import StateTags
 import bot_strings
@@ -14,6 +15,8 @@ class MainState(BasicState):
             bot_strings.get_links_id: self.get_links_answer,
             bot_strings.set_updates_id: lambda: BasicState.create_transition(StateTags.SET_UPDATES),
         }
+        if self.user.user_id == config.admin_id:
+            self.state_changes[bot_strings.invoke_invites] = self.user.invoke_invites
 
     def print_hello_message(self):
         self.user.callback(bot_strings.main_help)

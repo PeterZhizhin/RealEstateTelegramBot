@@ -21,6 +21,10 @@ add_link_id = '/add_link'
 get_links_id = '/get_links'
 set_updates_id = '/set_updates'
 
+# Admin only
+invoke_invites = '/invites_invoke'
+admin_hello = "Hello, admin!"
+
 current_links_message = "Список текущих ссылок:"
 no_links_message = "Ссылок нет."
 
