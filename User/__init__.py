@@ -96,7 +96,7 @@ class User:
                 metro = update['location']['metro']
                 location = "{} ({})".format(metro['name'], metro['description'])
             else:
-                location = update['location']['address'][:-2]
+                location = " ".join(update['location']['address'][:-2])
             price = update['price'][0]
             message += bot_strings.base_for_sending_preview.format(location=location, price=price,
                                                                    info_cmd=bot_strings.cian_base_cmd.format(
