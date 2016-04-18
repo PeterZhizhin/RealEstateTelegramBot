@@ -1,5 +1,6 @@
 import json
 
+import config
 import requests
 
 base_url = 'https://api.telegram.org/bot{api_key}/{method}'
@@ -86,10 +87,26 @@ class MessageFunctionObject:
         a['url'] = url
         return a
 
-    def __call__(self, message_text):
+    def __send_one(self, message_text):
         self.msg['text'] = message_text
-        res = self.send_msg_function(self.msg)
+        return self.send_msg_function(self.msg)
+
+    def __call__(self, message_text):
+        if len(message_text) > config.telegram_max_length:
+            messages = message_text.split("\n")
+            total_messages = [""]
+            for message in messages:
+                if len(total_messages[-1]) + len(message) < config.telegram_max_length:
+                    total_messages[-1] += message
+                else:
+                    total_messages.append(message)
+        else:
+            total_messages = [message_text]
+        res = None
+        for message in total_messages:
+            res = self.__send_one(message)
         self.clear_message()
+        assert res is not None
         return res
 
 
