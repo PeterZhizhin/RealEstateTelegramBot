@@ -89,7 +89,7 @@ class MessageFunctionObject:
         return a
 
     def __send_one(self, message_text):
-        self.msg['text'] = message_text.encode('utf-8')
+        self.msg['text'] = message_text
         return self.send_msg_function(self.msg)
 
     def __call__(self, message_text):
