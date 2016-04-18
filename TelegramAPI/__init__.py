@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 
 import config
@@ -97,7 +98,7 @@ class MessageFunctionObject:
             total_messages = [""]
             for message in messages:
                 if len(total_messages[-1]) + len(message) < config.telegram_max_length:
-                    total_messages[-1] += message
+                    total_messages[-1] += message + "\n"
                 else:
                     total_messages.append(message)
         else:

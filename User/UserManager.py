@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 from . import User
 from threading import Lock

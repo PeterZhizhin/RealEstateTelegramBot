@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from ..BasicState import BasicState
 from .. import StateTags
 from _datetime import datetime

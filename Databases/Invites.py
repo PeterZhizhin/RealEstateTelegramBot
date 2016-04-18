@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from Databases import Databases
 import random
 import string

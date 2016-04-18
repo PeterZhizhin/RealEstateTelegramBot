@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from ..BasicState import BasicState
 from .. import StateTags
 import bot_strings

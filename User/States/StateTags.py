@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 MAIN = 'main'
 NONE = 'none'
 SET_UPDATES = 'set_updates'

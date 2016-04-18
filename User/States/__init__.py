@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .StateMetaClass import StateMetaClass
 from .BasicState import BasicState
 from .NoneState import NoneState
