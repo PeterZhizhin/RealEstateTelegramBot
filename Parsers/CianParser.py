@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from urllib.parse import urlparse, parse_qs, urlencode
 
+import logging
 import config
 import re
 import requests
@@ -9,6 +10,7 @@ from Databases import Databases
 from bs4 import BeautifulSoup as bs
 
 table_cookies = {'serp_view_mode': 'table'}
+logger = logging.getLogger("CianParser")
 
 
 def change_params(url, **kwargs):
@@ -164,6 +166,11 @@ def get_count_of_offers(page_bs):
         return 0
     count_re = re.compile(".*?([1-9][0-9])\s*объявлен")
     count_entry = page_bs.find("meta", attrs={'content': lambda x: count_re.search(x)})
+    if count_entry is None:
+        import pickle
+        with open('wrong_bs.pkl', 'wb') as f:
+            pickle.dump(page_bs, f)
+        logger.warning("Wrong page_bs. Saved as wrong_bs.pkl")
     assert count_entry is not None
     count = count_re.match(count_entry.attrs['content']).groups()[0]
     return int(count)
