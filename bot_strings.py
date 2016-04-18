@@ -75,3 +75,5 @@ go_to_flat_by_url_caption = "Открыть в браузере"
 base_for_sending_preview = "{location} {price} {info_cmd}"
 cian_base_cmd = "/cian{id}"
 cian_cmd_regexp = re.compile("\/cian([0-9]+)")
+
+no_flat_with_id = "Квартиры с таким id не найдено"

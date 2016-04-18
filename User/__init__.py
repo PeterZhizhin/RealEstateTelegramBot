@@ -64,6 +64,8 @@ class User:
 
     def send_offer_info(self, offer_id):
         offer = FlatsDB.get_flat(offer_id)
+        if offer is None:
+            self.callback(bot_strings.no_flat_with_id)
         metro = "{} ({})".format(offer['location']['metro']['name'],
                                  offer['location']['metro']['description']) \
             if 'metro' in offer['location'] else "Метро нет"
