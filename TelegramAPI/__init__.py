@@ -89,10 +89,12 @@ class MessageFunctionObject:
         return a
 
     def __send_one(self, message_text):
-        self.msg['text'] = message_text
+        self.msg['text'] = message_text.encode('utf-8')
         return self.send_msg_function(self.msg)
 
     def __call__(self, message_text):
+        if len(message_text) == 0:
+            return None
         if len(message_text) > config.telegram_max_length:
             messages = message_text.split("\n")
             total_messages = [""]
