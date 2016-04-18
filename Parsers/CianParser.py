@@ -30,6 +30,8 @@ def change_params(url, **kwargs):
 
 def get_url(url):
     r = requests.get(url, cookies=table_cookies)
+    if r.status_code != 200:
+        return None
     return bs(r.text, 'lxml')
 
 
@@ -177,7 +179,15 @@ def get_count_of_offers(page_bs):
 
 
 def get_offers(url, time):
-    page_bs = get_url(change_params(url, totime=time, p=1))
+    params = change_params(url, totime=time, p=1)
+    page_bs = get_url(params)
+    if page_bs is None:
+        total_trials = 1
+        while page_bs is None:
+            if total_trials > config.cian_trials_before_none:
+                return
+            time.sleep(1)
+            page_bs = get_url(params)
     # Получаем число предложений
     num_of_offers = get_count_of_offers(page_bs)
     # Определяем по ним число страниц

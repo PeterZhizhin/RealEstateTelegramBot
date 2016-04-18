@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import logging
 
 # Main
-api_key = "<API-KEY>"
-admin_id = <ADMIN-ID-INT>
+api_key = "169669071:AAFvVRshUZ5th8hYebgke92j7x1ulOWAgts"
+admin_id = 93894659
 log_file = 'bot.log'
 console_log_level = logging.DEBUG
-file_log_level = logging.INFO
+file_log_level = logging.DEBUG
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 # Users
@@ -18,7 +19,7 @@ default_user = {'auth': False, 'received_links': [],
 invite_length = 20
 
 # Mongo
-mongo_url = '127.0.0.1'
+mongo_url = 'localhost'
 mongo_port = 27017
 mongo_database_name = 'telegram_realty_bot_db'
 users_db = 'users'
@@ -26,8 +27,12 @@ user_links_db = 'user_links'
 invites_db = 'invites'
 flats_db = 'flats'
 
+# Default invites count
+default_invites_count = 10
+
 # CIAN parser
 cian_default_timeout = 7200
+cian_trials_before_none = 5
 
 # Input awaitance time (seconds)
 awaitance = 120
@@ -36,4 +41,7 @@ awaitance = 120
 max_tag_len = 30
 
 # Minimum update duration (minutes)
-min_time_update_len = 30
+min_time_update_len = 1
+
+telegram_max_length = 4096
+
