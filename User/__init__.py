@@ -76,7 +76,6 @@ class User:
                                                            additional_info=", ".join(offer['info']),
                                                            comment=offer['comment'],
                                                            contacts=offer['contacts'])
-        self.callback.markdown = True
         self.callback.add_markup(
             self.callback.inline_keyboard([[self.callback.inline_url(bot_strings.go_to_flat_by_url_caption,
                                                                      offer['url'])]]))
