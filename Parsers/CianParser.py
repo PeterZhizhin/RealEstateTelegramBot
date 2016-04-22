@@ -173,9 +173,8 @@ def get_count_of_offers(page_bs):
     count_re = re.compile(".*?([1-9][0-9])\s*объявлен")
     count_entry = page_bs.find("meta", attrs={'content': lambda x: count_re.search(x)})
     if count_entry is None:
-        import pickle
         with open('wrong_bs.pkl', 'wb') as f:
-            pickle.dump(page_bs, f)
+            f.write(str(page_bs))
         logger.warning("Wrong page_bs. Saved as wrong_bs.pkl")
     assert count_entry is not None
     count = count_re.match(count_entry.attrs['content']).groups()[0]
@@ -191,7 +190,7 @@ def safe_request(url):
             return page_bs
         logger.warning("Request wasn't successful!")
         with open('request{0}.sav'.format(trials), 'w') as f:
-            f.write(page_bs)
+            f.write(str(page_bs))
         time.sleep(2)
         trials += 1
     logger.error("Total request didn't succeed :<")
