@@ -207,6 +207,7 @@ def get_offers(raw_url, url_time):
     page_bs = safe_request(url)
     # Получаем число предложений
     num_of_offers = get_count_of_offers(page_bs)
+    logger.debug("Parsing {} offers".format(num_of_offers))
     # Определяем по ним число страниц
     if num_of_offers == 0:
         return
@@ -217,6 +218,7 @@ def get_offers(raw_url, url_time):
     while num_of_offers > 0:
         url = change_params(raw_url, totime=url_time, p=i)
         raw_offers = get_raw_offers(safe_request(url))
+        logger.debug("Parsing {} page".format(i))
         yield from (parse_raw_offer(offer) for offer in raw_offers)
         num_of_offers -= len(raw_offers)
         i += 1
