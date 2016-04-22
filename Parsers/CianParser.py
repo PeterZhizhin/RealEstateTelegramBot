@@ -66,76 +66,81 @@ def offer_info_class_lambda(x):
 
 
 def parse_raw_offer(offer):
-    info = offer.findAll('td', {'class': offer_info_class_lambda}, recursive=False)
-    info = [i.find('div', {'class': 'objects_item_info_col_w'}) for i in info]
+    try:
+        info = offer.findAll('td', {'class': offer_info_class_lambda}, recursive=False)
+        info = [i.find('div', {'class': 'objects_item_info_col_w'}) for i in info]
 
-    # Create dict of all entries
-    entry_info = dict()
+        # Create dict of all entries
+        entry_info = dict()
 
-    # col_1 -- расположение
-    entry_info['location'] = {}
-    loc = info[0].find('input')
-    coords = loc.attrs['value']
-    entry_info['location']['coordinates'] = coords
-    metro = info[0].find('div', {'class': 'objects_item_metro'})
-    if metro.find('a') is not None:
-        metro_name = fix_text(metro.find('a'))
-        entry_info['location']['metro'] = {}
-        entry_info['location']['metro']['name'] = metro_name
-        metro_descr = fix_text(metro.find('span', {'class': 'objects_item_metro_comment'}))
-        entry_info['location']['metro']['description'] = metro_descr
+        # col_1 -- расположение
+        entry_info['location'] = {}
+        loc = info[0].find('input')
+        coords = loc.attrs['value']
+        entry_info['location']['coordinates'] = coords
+        metro = info[0].find('div', {'class': 'objects_item_metro'})
+        if metro.find('a') is not None:
+            metro_name = fix_text(metro.find('a'))
+            entry_info['location']['metro'] = {}
+            entry_info['location']['metro']['name'] = metro_name
+            metro_descr = fix_text(metro.find('span', {'class': 'objects_item_metro_comment'}))
+            entry_info['location']['metro']['description'] = metro_descr
 
-    address_bs = offer.findAll('div', {'class': 'objects_item_addr'})
-    address_str = [fix_text(i) for i in address_bs]
-    entry_info['location']['address'] = address_str
+        address_bs = offer.findAll('div', {'class': 'objects_item_addr'})
+        address_str = [fix_text(i) for i in address_bs]
+        entry_info['location']['address'] = address_str
 
-    # col_2 -- объект
-    descr = fix_text(info[1])
-    entry_info['object'] = descr
+        # col_2 -- объект
+        descr = fix_text(info[1])
+        entry_info['object'] = descr
 
-    # col_3 -- площадь
-    sizes = [fix_text(i) for i in info[2].findAll('td')]
-    entry_info['sizes'] = sizes
+        # col_3 -- площадь
+        sizes = [fix_text(i) for i in info[2].findAll('td')]
+        entry_info['sizes'] = sizes
 
-    # col_4 -- цена
-    price_list = info[3].findAll('div', {'class': lambda x: x is None or 'complaint' not in x})
-    price_list = [fix_text(i) for i in price_list]
-    entry_info['price'] = price_list
+        # col_4 -- цена
+        price_list = info[3].findAll('div', {'class': lambda x: x is None or 'complaint' not in x})
+        price_list = [fix_text(i) for i in price_list]
+        entry_info['price'] = price_list
 
-    # col_5 -- процент
-    percent = fix_text(info[4])
-    entry_info['fee'] = percent
+        # col_5 -- процент
+        percent = fix_text(info[4])
+        entry_info['fee'] = percent
 
-    # col_6 -- этаж
-    floor = fix_text(info[5])
-    entry_info['floor'] = floor
+        # col_6 -- этаж
+        floor = fix_text(info[5])
+        entry_info['floor'] = floor
 
-    # col_7 -- доп. сведения
-    additional_info = [fix_text(i) for i in info[6].findAll('td')]
-    entry_info['info'] = additional_info
+        # col_7 -- доп. сведения
+        additional_info = [fix_text(i) for i in info[6].findAll('td')]
+        entry_info['info'] = additional_info
 
-    # col_8 -- контакты
-    contacts = fix_text(info[7].find('a'))
-    entry_info['contacts'] = contacts
+        # col_8 -- контакты
+        contacts = fix_text(info[7].find('a'))
+        entry_info['contacts'] = contacts
 
-    # col_9 -- комментарий
-    comment = info[8].find('div', {'class': lambda x: x is not None and 'comment' in x})
-    comment_text = fix_text(comment.contents[0])
-    entry_info['comment'] = comment_text
-    flat_url = comment.find('a', {'href': lambda x: x is not None}).attrs['href']
-    entry_info['url'] = flat_url
-    flat_id = re.match(".*\/([0-9]*)\/", flat_url).groups()[0]
-    entry_info['id'] = int(flat_id)
+        # col_9 -- комментарий
+        comment = info[8].find('div', {'class': lambda x: x is not None and 'comment' in x})
+        comment_text = fix_text(comment.contents[0])
+        entry_info['comment'] = comment_text
+        flat_url = comment.find('a', {'href': lambda x: x is not None}).attrs['href']
+        entry_info['url'] = flat_url
+        flat_id = re.match(".*\/([0-9]*)\/", flat_url).groups()[0]
+        entry_info['id'] = int(flat_id)
 
-    user_link = info[8].find('a', {'href': lambda x: x is not None and 'id_user' in x})
-    entry_info['user'] = {}
-    user_name = user_link.text
-    entry_info['user']['name'] = user_name
-    user_url = user_link.attrs['href']
-    user_id = re.match(".*id_user=([0-9]*)&", user_url).groups()[0]
-    entry_info['user']['id'] = int(user_id)
+        user_link = info[8].find('a', {'href': lambda x: x is not None and 'id_user' in x})
+        entry_info['user'] = {}
+        user_name = user_link.text
+        entry_info['user']['name'] = user_name
+        user_url = user_link.attrs['href']
+        user_id = re.match(".*id_user=([0-9]*)&", user_url).groups()[0]
+        entry_info['user']['id'] = int(user_id)
 
-    return entry_info
+        return entry_info
+    except:
+        logger.error("Error while parsing offer. Dumping object to file")
+        with open("file_parse_error.fil", 'w') as f:
+            f.write(str(offer))
 
 
 cian_url = 'cian.ru/cat.php'
@@ -173,7 +178,7 @@ def get_count_of_offers(page_bs):
     count_re = re.compile(".*?([1-9][0-9])\s*объявлен")
     count_entry = page_bs.find("meta", attrs={'content': lambda x: count_re.search(x)})
     if count_entry is None:
-        with open('wrong_bs.pkl', 'wb') as f:
+        with open('wrong_bs.pkl', 'w') as f:
             f.write(str(page_bs))
         logger.warning("Wrong page_bs. Saved as wrong_bs.pkl")
     assert count_entry is not None
