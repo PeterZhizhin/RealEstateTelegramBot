@@ -3,6 +3,9 @@
 from urllib.parse import urlparse, parse_qs, urlencode
 
 import logging
+
+import time
+
 import config
 import re
 import requests
@@ -58,7 +61,8 @@ def write_to_database(entry_id, entry, db):
         db.insert_one(entry)
 
 
-offer_info_class_lambda = lambda x: x is not None and x.startswith('objects_item_info_col_')
+def offer_info_class_lambda(x):
+    return x is not None and x.startswith('objects_item_info_col_')
 
 
 def parse_raw_offer(offer):
@@ -178,16 +182,25 @@ def get_count_of_offers(page_bs):
     return int(count)
 
 
-def get_offers(url, time):
-    params = change_params(url, totime=time, p=1)
-    page_bs = get_url(params)
-    if page_bs is None:
-        total_trials = 1
-        while page_bs is None:
-            if total_trials > config.cian_trials_before_none:
-                return
-            time.sleep(1)
-            page_bs = get_url(params)
+def safe_request(url):
+    trials = 0
+    page_bs = None
+    while page_bs is None and trials < config.cian_trials_before_none:
+        page_bs = get_url(url)
+        if page_bs is not None:
+            return page_bs
+        logger.warning("Request wasn't successful!")
+        with open('request{0}.sav'.format(trials), 'w') as f:
+            f.write(page_bs)
+        time.sleep(2)
+        trials += 1
+    logger.error("Total request didn't succeed :<")
+    return None
+
+
+def get_offers(raw_url, url_time):
+    url = change_params(raw_url, totime=url_time, p=1)
+    page_bs = safe_request(url)
     # Получаем число предложений
     num_of_offers = get_count_of_offers(page_bs)
     # Определяем по ним число страниц
@@ -198,8 +211,8 @@ def get_offers(url, time):
     num_of_offers -= len(raw_offers)
     i = 2
     while num_of_offers > 0:
-        url = change_params(url, totime=time, p=i)
-        raw_offers = get_raw_offers(get_url(url))
+        url = change_params(raw_url, totime=url_time, p=i)
+        raw_offers = get_raw_offers(safe_request(url))
         yield from (parse_raw_offer(offer) for offer in raw_offers)
         num_of_offers -= len(raw_offers)
         i += 1
