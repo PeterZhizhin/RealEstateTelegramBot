@@ -2,8 +2,8 @@
 import logging
 
 # Main
-api_key = "169669071:AAFvVRshUZ5th8hYebgke92j7x1ulOWAgts"
-admin_id = 93894659
+api_key = "<YOUR API KEY>"
+admin_id = <YOUR INT ADMIN ID>
 log_file = 'bot.log'
 console_log_level = logging.DEBUG
 file_log_level = logging.DEBUG
@@ -32,7 +32,9 @@ default_invites_count = 10
 
 # CIAN parser
 cian_default_timeout = 7200
+cian_min_timeout = 30
 cian_trials_before_none = 5
+debug_cian = False
 
 # Input awaitance time (seconds)
 awaitance = 120

@@ -3,14 +3,16 @@
 from urllib.parse import urlparse, parse_qs, urlencode
 
 import logging
-
 import time
-
 import config
+import os
 import re
 import requests
 from Databases import Databases
 from bs4 import BeautifulSoup as bs
+
+import datetime
+import pytz
 
 table_cookies = {'serp_view_mode': 'table'}
 logger = logging.getLogger("CianParser")
@@ -31,8 +33,17 @@ def change_params(url, **kwargs):
     return res + parsed_url.path + '?' + urlencode(qs, doseq=True)
 
 
+def get_url_id():
+    return datetime.datetime.now().strftime("%c")
+
+
 def get_url(url):
     r = requests.get(url, cookies=table_cookies)
+    if config.debug_cian:
+        location = 'url_responses/answer{}.html'.format(get_url_id())
+        os.makedirs(os.path.dirname(location), exist_ok=True)
+        with open(location, 'w') as f:
+            f.write(r.text)
     if r.status_code != 200:
         return None
     return bs(r.text, 'lxml')
@@ -63,6 +74,38 @@ def write_to_database(entry_id, entry, db):
 
 def offer_info_class_lambda(x):
     return x is not None and x.startswith('objects_item_info_col_')
+
+
+timezone = pytz.timezone('Europe/Moscow')
+months = ["январь", "февраль", "март", "апрель", "май",
+          "июнь", "июль", "август", "сентябрь", "октябрь",
+          "ноябрь", "декабрь"]
+
+
+def parse_time(date, time):
+    current_time = datetime.datetime.now(timezone)
+    if date == 'сегодня':
+        date = current_time.date()
+    elif date == 'вчера':
+        date = (current_time - datetime.timedelta(days=1)).date()
+    else:
+        date = date.split(' ')
+        day = int(date[0])
+        if len(date) == 3:
+            year = int(date[2])
+        else:
+            year = current_time.year
+        month = date[1].lower()
+        for i, name in enumerate(months):
+            if name.startswith(month):
+                month = i + 1
+                break
+        date = datetime.date(year=year, day=day, month=month)
+
+    time = [int(i) for i in time.split(':')]
+    time = datetime.time(hour=time[0], minute=time[1])
+
+    return datetime.datetime.combine(date=date, time=time)
 
 
 def parse_raw_offer(offer):
@@ -133,13 +176,19 @@ def parse_raw_offer(offer):
         user_name = user_link.text
         entry_info['user']['name'] = user_name
         user_url = user_link.attrs['href']
-        user_id = re.match(".*id_user=([0-9]*)&", user_url).groups()[0]
+        user_id = re.match(".*id_user=([0-9]+).*", user_url).groups()[0]
         entry_info['user']['id'] = int(user_id)
+
+        # <span class="objects_item_dt_added">30 Апр, 22:12</span>
+        raw_time = info[8].find('span', {'class': 'objects_item_dt_added'})
+        raw_time = fix_text(raw_time).split(",")
+        raw_time = parse_time(raw_time[0], raw_time[1])
+        entry_info['time'] = raw_time
 
         return entry_info
     except:
         logger.error("Error while parsing offer. Dumping object to file")
-        with open("file_parse_error.fil", 'w') as f:
+        with open("file_parse_error.html", 'w') as f:
             f.write(str(offer))
 
 
@@ -165,24 +214,38 @@ def check_url_correct(url):
 
 def get_new_offers(url, time=config.cian_default_timeout):
     db = Databases.get_flats_db()
+    ids = {}
     for offer in get_offers(url, time):
+        if offer['id'] in ids.keys():
+            logger.error("Already got this offer {}".format(offer['url']))
+            old = ids[offer['id']]
+            old = old.copy()
+            del old['_id']
+            if old != offer:
+                logger.error("Different dicts: {}\n{}".format(offer, old))
+        ids[offer['id']] = offer
         entry_db = db.find_one({'id': offer['id']})
-        if entry_db is None:
-            db.insert_one(offer)
+        if entry_db is not None:
+            if entry_db['comment'] != offer['comment']:
+                logger.warning("Same ID, but different text: \n {} \n {}".format(entry_db['comment'],
+                                                                                 offer['comment']))
+            db.remove({'_id': entry_db['_id']})
+        db.insert_one(offer)
         yield offer
+    logger.info("Totally parsed {} real offers.".format(len(ids)))
 
 
 def get_count_of_offers(page_bs):
     if check_not_found(page_bs):
         return 0
-    count_re = re.compile(".*?([1-9][0-9])\s*объявлен")
-    count_entry = page_bs.find("meta", attrs={'content': lambda x: count_re.search(x)})
+    count_re = re.compile(".*?([1-9][0-9]*)\s*объявлен")
+    count_entry = fix_text(page_bs.find("title"))
     if count_entry is None:
         with open('wrong_bs.pkl', 'w') as f:
             f.write(str(page_bs))
         logger.warning("Wrong page_bs. Saved as wrong_bs.pkl")
     assert count_entry is not None
-    count = count_re.match(count_entry.attrs['content']).groups()[0]
+    count = count_re.match(count_entry).groups()[0]
     return int(count)
 
 

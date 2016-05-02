@@ -22,8 +22,8 @@ class LinksDBManager:
                                                    'url': url,
                                                    'tag': tag,
                                                    'frequency': frequency,
-                                                   'last_update': datetime.now(),
-                                                   'next_update': datetime.now() + timedelta(minutes=frequency),
+                                                   'last_update': datetime.utcnow(),
+                                                   'next_update': datetime.utcnow() + timedelta(minutes=frequency),
                                                    'type': link_type})
         return LinksDBManager.links_db.find_one({'_id': res.inserted_id})
 
@@ -36,14 +36,14 @@ class LinksDBManager:
 
     @staticmethod
     def get_expired_links():
-        return LinksDBManager.links_db.find({'next_update': {"$lte": datetime.now()}})
+        return LinksDBManager.links_db.find({'next_update': {"$lte": datetime.utcnow()}})
 
     @staticmethod
     def update_expiration_time(unique_id):
         update = LinksDBManager.links_db.find_one({"_id": unique_id})
         return LinksDBManager.links_db.update_one({"_id": unique_id},
                                                   {"$set": {
-                                                      'last_update': datetime.now(),
-                                                      "next_update": datetime.now() +
+                                                      'last_update': datetime.utcnow(),
+                                                      "next_update": datetime.utcnow() +
                                                                      timedelta(minutes=update['frequency'])
                                                   }})
