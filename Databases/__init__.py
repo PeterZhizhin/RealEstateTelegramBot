@@ -5,8 +5,7 @@ import config
 
 class Databases:
     mongo = MongoClient(host=config.mongo_url,
-                        port=config.mongo_port,
-                        connect=False)[config.mongo_database_name]
+                        port=config.mongo_port)[config.mongo_database_name]
 
     @staticmethod
     def get_users_db():

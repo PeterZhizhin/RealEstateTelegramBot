@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 import time
 import logging
-import multiprocessing
+import threading
 
 import random
 
@@ -111,6 +111,6 @@ if __name__ == "__main__":
     #    time.sleep(60 * 60)
     threads = []
     for i, link in enumerate(links):
-        threads.append(multiprocessing.Process(target=parse_link, args=(link, i)))
+        threads.append(threading.Thread(target=parse_link, args=(link, i)))
     for thread in threads:
         thread.start()
