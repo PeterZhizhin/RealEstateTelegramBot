@@ -27,6 +27,12 @@ user_links_db = 'user_links'
 invites_db = 'invites'
 flats_db = 'flats'
 
+# RabbitMQ
+rabbit_mq_url = 'localhost'
+rabbit_mq_port = 5672
+rabbit_mq_user = <YOUR USERNAME>
+rabbit_mq_pass = <YOUR PASS>
+
 # Default invites count
 default_invites_count = 10
 
@@ -46,4 +52,3 @@ max_tag_len = 30
 min_time_update_len = 1
 
 telegram_max_length = 4096
-
