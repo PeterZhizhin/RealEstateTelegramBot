@@ -17,6 +17,7 @@ class QueueWrapper:
                                                 host=config.rabbit_mq_url, port=config.rabbit_mq_port))
         QueueWrapper.connection = pika.BlockingConnection(params)
         QueueWrapper.channel = QueueWrapper.connection.channel()
+        QueueWrapper.channel.basic_qos(prefetch_count=1)
         QueueWrapper.existing_queues = set()
         QueueWrapper.existing_queues_lock = threading.Lock()
 
@@ -40,6 +41,14 @@ class QueueWrapper:
         QueueWrapper.channel.basic_publish(exchange='',
                                            routing_key=queue,
                                            body=message)
+
+    @staticmethod
+    def clear_queue(queue):
+        QueueWrapper.channel.queue_purge(queue=queue)
+
+    @staticmethod
+    def sleep(seconds):
+        QueueWrapper.connection.sleep(seconds)
 
     @staticmethod
     def start(detach=True):

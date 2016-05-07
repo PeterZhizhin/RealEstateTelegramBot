@@ -4,8 +4,9 @@ import logging
 from queue import Queue
 
 import config
+from Databases.Flats import FlatsDB
 from Databases.UserLinks import LinksDBManager
-from Parsers import CianParser
+from Queues.ProducerConsumer.ConsumerFactory import ConsumerFactory
 from User.UserManager import UserManager
 
 logger = logging.getLogger("UpdatesManager")
@@ -13,36 +14,21 @@ logger.setLevel(logging.DEBUG)
 
 
 class UpdatesManager:
-    link_check_queue = Queue()
-    link_check_callbacks = dict()
-    link_check_callbacks_lock = threading.Lock()
+    link_check_request_function = None
+    link_update_request_function = None
 
     @staticmethod
-    def push_callback_to_dict(callback_id, method):
-        with UpdatesManager.link_check_callbacks_lock:
-            UpdatesManager.link_check_callbacks[callback_id] = method
+    def link_check_acquired(info, result):
+        user = UserManager.get_or_create_user(info['uid'])
+        url = info['url']
+        tag = info['tag']
+        user.link_add_callback(url, tag, result)
 
     @staticmethod
-    def get_callback_from_dict(callback_id):
-        with UpdatesManager.link_check_callbacks_lock:
-            method = UpdatesManager.link_check_callbacks[callback_id]
-            del UpdatesManager.link_check_callbacks[callback_id]
-            return method
-
-    current_id = 0
-
-    @staticmethod
-    def id_creator():
-        UpdatesManager.current_id += 1
-        return UpdatesManager.current_id
-
-    @staticmethod
-    def check_urls_worker():
-        while True:
-            request = UpdatesManager.link_check_queue.get(block=True)
-            link = request['link']
-            callback = UpdatesManager.get_callback_from_dict(request['callback'])
-            callback(CianParser.check_url_correct(link))
+    def link_updated_result(info, new_links):
+        user = UserManager.get_or_create_user(info['uid'])
+        offers = FlatsDB.get_flats(new_links)
+        user.new_links_acquired_event(offers)
 
     @staticmethod
     def worker():
@@ -50,19 +36,24 @@ class UpdatesManager:
             for link in LinksDBManager.get_expired_links():
                 LinksDBManager.update_expiration_time(link['_id'])
                 logger.debug("Parsing offers for user " + str(link['id']))
-                user = UserManager.get_or_create_user(link['id'])
-                user.new_links_acquired_event(CianParser.get_new_offers(link['url'], time=max(config.cian_min_timeout,
-                                                                                              link['frequency'] * 60)))
+                user_info = link['id']
+                UpdatesManager.link_update_request_function({'uid': user_info}, {'url': link['url'],
+                                                                                'time': max(config.cian_min_timeout,
+                                                                                            link['frequency'] * 60)})
 
     @staticmethod
-    def add_link_checking(link, callback):
-        callback_id = UpdatesManager.id_creator()
-        UpdatesManager.push_callback_to_dict(callback_id, callback)
-        UpdatesManager.link_check_queue.put({'link': link, 'callback': callback_id})
+    def add_link_checking(user_id, link, tag):
+        UpdatesManager.link_check_request_function({'uid': user_id,
+                                                    'url': link,
+                                                    'tag': tag}, {'url': link})
 
     @staticmethod
     def init_manager():
+        UpdatesManager.link_check_request_function = ConsumerFactory.get_consumer(config.check_url_queue_req_queue,
+                                                                                  config.check_url_queue_ans_queue,
+                                                                                  UpdatesManager.link_check_acquired)
+        UpdatesManager.link_update_request_function = ConsumerFactory.get_consumer(config.parse_url_req_queue,
+                                                                                   config.parse_url_ans_queue,
+                                                                                   UpdatesManager.link_updated_result)
         updates_thread = threading.Thread(target=UpdatesManager.worker)
         updates_thread.start()
-        check_links_thread = threading.Thread(target=UpdatesManager.check_urls_worker)
-        check_links_thread.start()

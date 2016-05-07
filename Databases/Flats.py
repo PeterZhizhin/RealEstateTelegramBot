@@ -8,3 +8,7 @@ class FlatsDB:
     @staticmethod
     def get_flat(flat_id):
         return FlatsDB.db.find_one({"id": flat_id})
+
+    @staticmethod
+    def get_flats(flat_ids):
+        return list(FlatsDB.db.find({"id": {'$in': flat_ids}}))

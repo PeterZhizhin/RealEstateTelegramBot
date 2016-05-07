@@ -4,16 +4,17 @@ import logging
 
 from Databases import Databases
 import config
+from Queues import QueueWrapper
 from TelegramAPI import Telegram
 from User import User
 from UpdatesManager import UpdatesManager
 from User.UserManager import UserManager
 
-
 if __name__ == "__main__":
     logger = logging.getLogger()
     logging.getLogger('requests').setLevel(logging.WARNING)
     logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('pika').setLevel(logging.INFO)
     logger.setLevel(logging.DEBUG)
 
     file_handler = logging.FileHandler(config.log_file)
@@ -30,12 +31,12 @@ if __name__ == "__main__":
     logger.addHandler(file_handler)
 
     logger.info('Application started')
-
     bot = Telegram(config.api_key)
     UserManager.set_bot(bot)
-    UpdatesManager.init_manager()
     User.set_db(Databases.get_users_db())
-    user_dict = {}
+    QueueWrapper.init()
+    UpdatesManager.init_manager()
+    QueueWrapper.start(detach=True)
     while True:
         logger.debug("Getting updates")
         for query in bot.get_updates(timeout=30):

@@ -233,33 +233,11 @@ def get_new_offers(url, time=config.cian_default_timeout):
             del old['_id']
             if old != offer:
                 logger.error("Different dicts: {}\n{}".format(offer, old))
-        ids[offer['id']] = offer
-        entry_db = db.find_one({'id': offer['id']})
-        if entry_db is not None:
-            if entry_db['comment'] != offer['comment']:
-                logger.warning("Same ID, but different text: \n {} \n {}".format(entry_db['comment'],
-                                                                                 offer['comment']))
-            db.remove({'_id': entry_db['_id']})
-        db.insert_one(offer)
-        yield offer
-    logger.info("Updating DB of offers")
-    db = Databases.get_flats_db()
-    offer_ids = list(ids.keys())
-    db_offers = db.find({'id': {'$in': offer_ids}})
-    db_offers = {offer['id']: offer for offer in db_offers}
-    db_ids = db_offers.keys()
-    new_offers = list()
-    for offer in ids.values():
-        if offer['id'] in db_ids:
-            old_offer = db_offers[offer['id']]
-            offer['_id'] = old_offer['_id']
-            if old_offer != offer:
-                db.find_one_and_replace({'_id': offer['_id']}, offer)
         else:
-            new_offers.append(offer)
-    if len(new_offers) > 0:
-        db.insert_many(new_offers)
-    logger.info("Totally parsed {} real offers. {} added to base".format(len(ids), len(new_offers)))
+            ids[offer['id']] = offer
+            db.find_one_and_replace({'id': offer['id']}, offer, upsert=True)
+            yield offer
+    logger.info("Totally parsed {} real offers.".format(len(ids)))
 
 
 def get_count_of_offers(page_bs):

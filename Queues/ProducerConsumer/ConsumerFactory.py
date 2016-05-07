@@ -8,8 +8,13 @@ class ConsumerFactory:
     def get_consumer(request_queue_name, answer_queue_name, answer_callback):
         def raw_answer_callback(ch, method, properties, body):
             body = load_object(body)
-            answer_callback(body['id'], body['ans'])
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            ack = answer_callback(body['id'], body['ans'])
+            if ack is None:
+                ack = True
+            if ack:
+                ch.basic_ack(delivery_tag=method.delivery_tag)
+            else:
+                ch.basic_nack(delivery_tag=method.delivery_tag)
 
         def write_msg(msg_id, request):
             message = {

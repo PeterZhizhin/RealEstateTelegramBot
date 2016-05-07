@@ -7,6 +7,7 @@ def callback(message, answer_callback):
     print("Got message")
     print(message)
     answer_callback("GOT MESSAGE")
+    return True
 
 
 if __name__ == "__main__":

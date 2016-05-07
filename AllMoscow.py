@@ -7,6 +7,8 @@ import logging
 import multiprocessing
 
 import random
+from Queues import QueueWrapper
+from Queues.ProducerConsumer.ConsumerFactory import ConsumerFactory
 
 logger = logging.getLogger("AllMoscowParser")
 
@@ -78,41 +80,40 @@ def time_is_right():
     return True
 
 
-def parse_link(link, thread_id):
-    while True:
-        logger.info("THREAD {} Parsing all Moscow".format(thread_id))
-        count = 0
-        for offer in CianParser.get_new_offers(link, time=0):
-            count += 1
-        logger.info("THREAD {} Parsed {} offers".format(thread_id, count))
-        time.sleep(random.randint(300, 350))
+links_res = dict()
+logger = logging.getLogger()
+logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(config.console_log_level)
+
+formatter = logging.Formatter(config.log_format)
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(stream_handler)
+
+
+def link_parsed(info, result):
+    global links_res
+    links_res[info] = True
+    logger.debug("Parsed {} offers".format(len(result)))
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger()
-    logging.getLogger('requests').setLevel(logging.WARNING)
-    logging.getLogger('urllib3').setLevel(logging.WARNING)
-    logger.setLevel(logging.DEBUG)
-
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(config.console_log_level)
-
-    formatter = logging.Formatter(config.log_format)
-    stream_handler.setFormatter(formatter)
-
-    logger.addHandler(stream_handler)
-    """
+    QueueWrapper.init()
+    QueueWrapper.clear_queue(config.parse_all_moscow_req_queue)
+    sender_function = ConsumerFactory.get_consumer(config.parse_all_moscow_req_queue, config.parse_all_moscow_ans_queue,
+                                                   link_parsed)
+    QueueWrapper.start(detach=True)
     while True:
-        if time_is_right():
-            logger.info("Parsing all Moscow")
-            count = 0
-            for offer in CianParser.get_new_offers(all_moscow, time=0):
-                count += 1
-            logger.info("Successfully parsed {} offers".format(count))
-        time.sleep(60 * 60)
-    """
-    threads = []
-    for i, link in enumerate(links):
-        threads.append(multiprocessing.Process(target=parse_link, args=(link, i)))
-    for thread in threads:
-        thread.start()
+        global links_res
+        links_res = dict()
+        for i, link in enumerate(links):
+            links_res[i] = False
+            sender_function(i, {'url': link, 'time': 0})
+        while not all(links_res.values()):
+            logger.debug("Waiting 10 seconds for new links result")
+            time.sleep(10)
+        time.sleep(5 * 60)

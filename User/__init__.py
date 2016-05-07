@@ -162,7 +162,7 @@ class User:
 
     def link_add_request(self, link, tag):
         from UpdatesManager import UpdatesManager
-        UpdatesManager.add_link_checking(link, lambda result: self.link_add_callback(link, tag, result))
+        UpdatesManager.add_link_checking(self.user_id, link, tag)
 
     def add_link(self, link, tag):
         logger.debug("Adding link of user " + str(self.user_id) +
