@@ -14,3 +14,4 @@ requests-cache
 simplegeneric
 pytz
 traitlets
+pika

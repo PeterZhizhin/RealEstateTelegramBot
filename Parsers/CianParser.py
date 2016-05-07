@@ -185,6 +185,16 @@ def parse_raw_offer(offer):
         raw_time = parse_time(raw_time[0], raw_time[1])
         entry_info['time'] = raw_time
 
+        actions = info[8].find('div', {'class': 'object_actions'})
+        photos = actions.find('a')
+        photos = fix_text(photos)
+        photos = re.match("Фото \(([0-9]+)\)", photos)
+        if photos is not None:
+            photos = int(photos.groups()[0])
+        else:
+            photos = 0
+        entry_info['photos_count'] = photos
+
         return entry_info
     except:
         logger.error("Error while parsing offer. Dumping object to file")
@@ -232,7 +242,24 @@ def get_new_offers(url, time=config.cian_default_timeout):
             db.remove({'_id': entry_db['_id']})
         db.insert_one(offer)
         yield offer
-    logger.info("Totally parsed {} real offers.".format(len(ids)))
+    logger.info("Updating DB of offers")
+    db = Databases.get_flats_db()
+    offer_ids = list(ids.keys())
+    db_offers = db.find({'id': {'$in': offer_ids}})
+    db_offers = {offer['id']: offer for offer in db_offers}
+    db_ids = db_offers.keys()
+    new_offers = list()
+    for offer in ids.values():
+        if offer['id'] in db_ids:
+            old_offer = db_offers[offer['id']]
+            offer['_id'] = old_offer['_id']
+            if old_offer != offer:
+                db.find_one_and_replace({'_id': offer['_id']}, offer)
+        else:
+            new_offers.append(offer)
+    if len(new_offers) > 0:
+        db.insert_many(new_offers)
+    logger.info("Totally parsed {} real offers. {} added to base".format(len(ids), len(new_offers)))
 
 
 def get_count_of_offers(page_bs):

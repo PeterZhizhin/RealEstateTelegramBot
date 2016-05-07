@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 import time
 import logging
-import threading
+import multiprocessing
 
 import random
 
@@ -101,16 +101,18 @@ if __name__ == "__main__":
     stream_handler.setFormatter(formatter)
 
     logger.addHandler(stream_handler)
-    # while True:
-    #    if time_is_right():
-    #        logger.info("Parsing all Moscow")
-    #        count = 0
-    #        for offer in CianParser.get_new_offers(all_moscow, time=0):
-    #            count += 1
-    #        logger.info("Successfully parsed {} offers".format(count))
-    #    time.sleep(60 * 60)
+    """
+    while True:
+        if time_is_right():
+            logger.info("Parsing all Moscow")
+            count = 0
+            for offer in CianParser.get_new_offers(all_moscow, time=0):
+                count += 1
+            logger.info("Successfully parsed {} offers".format(count))
+        time.sleep(60 * 60)
+    """
     threads = []
     for i, link in enumerate(links):
-        threads.append(threading.Thread(target=parse_link, args=(link, i)))
+        threads.append(multiprocessing.Process(target=parse_link, args=(link, i)))
     for thread in threads:
         thread.start()
