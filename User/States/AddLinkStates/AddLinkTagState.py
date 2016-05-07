@@ -27,8 +27,8 @@ class AddLinkTagState(BasicState):
         if message in bot_strings.cancel_id:
             return BasicState.create_transition(StateTags.MAIN)
         if self.user.check_tag_correct(message):
-            self.user.add_link(self.link, message)
-            self.user.callback(bot_strings.add_link_success)
+            self.user.callback(bot_strings.add_link_queue_notification)
+            self.user.link_add_request(self.link, message)
             if self.user.updates_duration is None:
                 self.user.callback(bot_strings.updates_time_not_setted_up)
             return BasicState.create_transition(StateTags.MAIN)

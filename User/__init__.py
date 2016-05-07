@@ -153,6 +153,17 @@ class User:
     def check_time_correct(time):
         return isinstance(time, int) and time >= config.min_time_update_len
 
+    def link_add_callback(self, link, tag, answer):
+        if answer:
+            self.add_link(link, tag)
+            self.callback(bot_strings.add_link_success.format(tag=tag))
+        else:
+            self.callback(bot_strings.add_link_failed.format(tag=tag))
+
+    def link_add_request(self, link, tag):
+        from UpdatesManager import UpdatesManager
+        UpdatesManager.add_link_checking(link, lambda result: self.link_add_callback(link, tag, result))
+
     def add_link(self, link, tag):
         logger.debug("Adding link of user " + str(self.user_id) +
                      " to database\n" + link +

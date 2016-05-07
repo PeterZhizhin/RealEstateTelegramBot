@@ -217,7 +217,7 @@ def check_url_correct(url):
         try:
             page_bs = get_url(change_params(url, totime=3000, p=1))
             raw_offers = get_raw_offers(page_bs)
-            return len(raw_offers) > 0
+            return True
         except:
             return False
 
