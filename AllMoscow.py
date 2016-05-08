@@ -117,13 +117,16 @@ if __name__ == "__main__":
     sender_function = ConsumerFactory.get_consumer(config.parse_all_moscow_req_queue, config.parse_all_moscow_ans_queue,
                                                    link_parsed)
     QueueWrapper.start(detach=True)
-    while True:
-        global links_res
-        links_res = dict()
-        for i, link in enumerate(links):
-            links_res[i] = False
-            sender_function(i, {'url': link, 'time': 0})
-        while not all(links_res.values()):
-            logger.debug("Waiting 10 seconds for new links result")
-            time.sleep(10)
-        time.sleep(5 * 60)
+    try:
+        while True:
+            global links_res
+            links_res = dict()
+            for i, link in enumerate(links):
+                links_res[i] = False
+                sender_function(i, {'url': link, 'time': 0})
+            while not all(links_res.values()):
+                logger.debug("Waiting 10 seconds for new links result")
+                time.sleep(10)
+            time.sleep(5 * 60)
+    except KeyboardInterrupt:
+        QueueWrapper.close()

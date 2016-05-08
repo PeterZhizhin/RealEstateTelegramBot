@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
+
 import config
 import pika
 import threading
+
+logger = logging.getLogger("QueueWrapper")
 
 
 class QueueWrapper:
@@ -9,9 +13,11 @@ class QueueWrapper:
     channel = None
     existing_queues = None
     existing_queues_lock = None
+    consume_thread = None
 
     @staticmethod
     def init():
+        logger.info("Initializing queue manager")
         base = "amqp://{username}:{password}@{host}:{port}"
         params = pika.URLParameters(base.format(username=config.rabbit_mq_user, password=config.rabbit_mq_pass,
                                                 host=config.rabbit_mq_url, port=config.rabbit_mq_port))
@@ -51,14 +57,28 @@ class QueueWrapper:
         QueueWrapper.connection.sleep(seconds)
 
     @staticmethod
+    def start_consuming_workaround(channel):
+        while channel._consumer_infos:
+            channel.connection.process_data_events(time_limit=5)
+
+    @staticmethod
     def start(detach=True):
         if detach:
-            threading.Thread(target=QueueWrapper.channel.start_consuming).start()
+            QueueWrapper.consume_thread = threading.Thread(
+                target=lambda: QueueWrapper.start_consuming_workaround(QueueWrapper.channel)
+            )
+            QueueWrapper.consume_thread.start()
         else:
-            QueueWrapper.channel.start_consuming()
+            QueueWrapper.start_consuming_workaround(QueueWrapper.channel)
 
     @staticmethod
     def close():
+        logger.info("Closing queue manager")
+        logger.debug("Stop consuming")
+        QueueWrapper.channel.stop_consuming()
+        if QueueWrapper.consume_thread:
+            logger.debug("Joining consume thread")
+            QueueWrapper.consume_thread.join()
         QueueWrapper.channel.close()
         QueueWrapper.connection.close()
         QueueWrapper.channel = None

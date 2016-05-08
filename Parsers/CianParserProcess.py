@@ -32,4 +32,7 @@ def main():
                                        parse_url_callback)
     ProducerFactory.subscribe_producer(config.parse_all_moscow_req_queue, config.parse_all_moscow_ans_queue,
                                        parse_url_callback)
-    QueueWrapper.start(detach=False)
+    try:
+        QueueWrapper.start(detach=False)
+    except KeyboardInterrupt:
+        QueueWrapper.close()

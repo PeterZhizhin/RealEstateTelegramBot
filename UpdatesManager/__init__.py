@@ -17,6 +17,9 @@ class UpdatesManager:
     link_check_request_function = None
     link_update_request_function = None
 
+    need_thread_close = False
+    updates_thread = None
+
     @staticmethod
     def link_check_acquired(info, result):
         user = UserManager.get_or_create_user(info['uid'])
@@ -32,7 +35,7 @@ class UpdatesManager:
 
     @staticmethod
     def worker():
-        while True:
+        while not UpdatesManager.need_thread_close:
             for link in LinksDBManager.get_expired_links():
                 LinksDBManager.update_expiration_time(link['_id'])
                 logger.debug("Parsing offers for user " + str(link['id']))
@@ -40,6 +43,8 @@ class UpdatesManager:
                 UpdatesManager.link_update_request_function({'uid': user_info}, {'url': link['url'],
                                                                                 'time': max(config.cian_min_timeout,
                                                                                             link['frequency'] * 60)})
+                if UpdatesManager.need_thread_close:
+                    break
 
     @staticmethod
     def add_link_checking(user_id, link, tag):
@@ -49,11 +54,19 @@ class UpdatesManager:
 
     @staticmethod
     def init_manager():
+        logger.info("Initializing updates manager")
         UpdatesManager.link_check_request_function = ConsumerFactory.get_consumer(config.check_url_queue_req_queue,
                                                                                   config.check_url_queue_ans_queue,
                                                                                   UpdatesManager.link_check_acquired)
         UpdatesManager.link_update_request_function = ConsumerFactory.get_consumer(config.parse_url_req_queue,
                                                                                    config.parse_url_ans_queue,
                                                                                    UpdatesManager.link_updated_result)
-        updates_thread = threading.Thread(target=UpdatesManager.worker)
-        updates_thread.start()
+        logger.debug("Starting updates thread")
+        UpdatesManager.updates_thread = threading.Thread(target=UpdatesManager.worker)
+        UpdatesManager.updates_thread.start()
+
+    @staticmethod
+    def destroy_manager():
+        logger.debug("Destroying thread")
+        UpdatesManager.need_thread_close = True
+        UpdatesManager.updates_thread.join()

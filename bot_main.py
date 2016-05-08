@@ -21,8 +21,12 @@ if __name__ == "__main__":
     QueueWrapper.init()
     UpdatesManager.init_manager()
     QueueWrapper.start(detach=True)
-    while True:
-        logger.debug("Getting updates")
-        for query in bot.get_updates(timeout=30):
-            user = UserManager.get_or_create_user(query['chat']['id'])
-            user.process_message(query['text'])
+    try:
+        while True:
+            logger.debug("Getting updates")
+            for query in bot.get_updates(timeout=30):
+                user = UserManager.get_or_create_user(query['chat']['id'])
+                user.process_message(query['text'])
+    except KeyboardInterrupt:
+        UpdatesManager.destroy_manager()
+        QueueWrapper.close()
