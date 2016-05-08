@@ -19,6 +19,8 @@ all_moscow = "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&" \
              "&offer_type=flat&polygon_name[0]=%D0%9E%D0%B1%D0%BB%D0%B0%D1%81%D1%82%" \
              "D1%8C+%D0%BF%D0%BE%D0%B8%D1%81%D0%BA%D0%B0+1&room1=1&type=-2"
 
+# This request was too big for the server
+"""
 links = [
     "http://www.cian.ru/cat.php?deal_type=rent&district[0]=125&district[10]=154&district[11]=327&district[12]=328"
     "&district[13]=329&district[14]=330&district[15]=331&district[16]=332&district[17]=333&district[18]=334"
@@ -69,6 +71,26 @@ links = [
     "&offer_type=flat&room1=1&type=-2",
 
 ]
+"""
+links = [
+    "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&foot_min=15&metro[0]=57&metro[1]=60&metro[2]=72"
+    "&metro[3]=228&metro[4]=233&metro[5]=234&metro[6]=235&metro[7]=244&offer_type=flat&only_foot=2&room1=1&type=-2",
+
+    "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&foot_min=15&metro[0]=11&metro[10]=229&metro[11]=272"
+    "&metro[1]=35&metro[2]=46&metro[3]=62&metro[4]=70&metro[5]=87&metro[6]=93&metro[7]=120&metro[8]=141&metro[9]=142"
+    "&offer_type=flat&only_foot=2&room1=1&type=-2",
+
+    "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&foot_min=15&metro[0]=12&metro[10]=275&metro[1]=14"
+    "&metro[2]=81&metro[3]=94&metro[4]=97&metro[5]=122&metro[6]=133&metro[7]=134&metro[8]=154&metro[9]=159"
+    "&offer_type=flat&only_foot=2&room1=1&type=-2",
+
+    "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&foot_min=15&metro[0]=12&metro[10]=275&metro[1]=14"
+    "&metro[2]=81&metro[3]=94&metro[4]=97&metro[5]=122&metro[6]=133&metro[7]=134&metro[8]=154&metro[9]=159"
+    "&offer_type=flat&only_foot=2&room1=1&type=-2",
+
+    "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&foot_min=15&metro[0]=9&metro[1]=15&metro[2]=29"
+    "&metro[3]=30&metro[4]=36&metro[5]=106&metro[6]=116&offer_type=flat&only_foot=2&room1=1&type=-2",
+]
 
 zone = pytz.timezone("Europe/Moscow")
 
@@ -84,7 +106,8 @@ links_res = dict()
 
 def link_parsed(info, result):
     global links_res
-    links_res[info] = True
+    if info in links_res.keys():
+        links_res[info] = True
     logger.debug("Parsed {} offers".format(len(result)))
 
 
