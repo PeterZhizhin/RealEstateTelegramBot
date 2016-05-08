@@ -4,4 +4,5 @@ RUN apt-get update
 RUN apt-get install -y python3-lxml python3-pip
 ADD requirements.txt /requirements.txt
 RUN pip3 install -r /requirements.txt
+ENV PYTHONIOENCODING=utf-8
 WORKDIR /source
