@@ -11,14 +11,6 @@ from Queues.ProducerConsumer.ConsumerFactory import ConsumerFactory
 LoggerInit.init_logging(config.log_all_moscow_file)
 logger = logging.getLogger("AllMoscowParser")
 
-# all_moscow = "http://www.cian.ru/cat.php?currency=2&deal_type=rent&engine_version=2" \
-#             "&maxprice=50000000&offer_type=flat&region=1&room1=1&type=-2"
-all_moscow = "http://www.cian.ru/cat.php?deal_type=rent&engine_version=2&" \
-             "in_polygon[0]=37.720177_55.877867%2C37.644646_55.826109%2C37.630913_55.792081%" \
-             "2C37.570488_55.802138%2C37.540276_55.906421%2C37.684471_55.894848%2C37.720177_55.877867" \
-             "&offer_type=flat&polygon_name[0]=%D0%9E%D0%B1%D0%BB%D0%B0%D1%81%D1%82%" \
-             "D1%8C+%D0%BF%D0%BE%D0%B8%D1%81%D0%BA%D0%B0+1&room1=1&type=-2"
-
 # This request was too big for the server
 """
 links = [
@@ -114,7 +106,8 @@ def link_parsed(info, result):
 if __name__ == "__main__":
     QueueWrapper.init()
     QueueWrapper.clear_queue(config.parse_all_moscow_req_queue)
-    sender_function = ConsumerFactory.get_consumer(config.parse_all_moscow_req_queue, config.parse_all_moscow_ans_queue,
+    sender_function = ConsumerFactory.get_consumer(config.parse_all_moscow_req_queue,
+                                                   config.parse_all_moscow_ans_queue,
                                                    link_parsed)
     QueueWrapper.start(detach=True)
     try:

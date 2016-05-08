@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from Parsers.CianParserProcess import main
+from UpdatesManager.UpdatesManagerProcess import main
 
 if __name__ == "__main__":
     main()

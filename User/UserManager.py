@@ -1,19 +1,53 @@
 # -*- coding: utf-8 -*-
 import logging
+
+import config
+from Queues.ProducerConsumer.ConsumerFactory import ConsumerFactory
+from Queues.StraightQueue import StraightQueue
 from . import User
-from threading import Lock
+import threading
 
 logger = logging.getLogger("UserManager")
 
 
 class UserManager:
+    link_check_request_function = None
     users_dict = dict()
-    dict_lock = Lock()
+    dict_lock = threading.Lock()
     bot = None
 
     @staticmethod
-    def set_bot(bot):
+    def link_check_acquired(info, result):
+        logger.debug("Link checked for user {}".format(info['uid']))
+        user = UserManager.get_or_create_user(info['uid'])
+        url = info['url']
+        tag = info['tag']
+        user.link_add_callback(url, tag, result)
+        return True
+
+    @staticmethod
+    def add_link_checking(user_id, link, tag):
+        logger.debug("Checking link for user {}".format(user_id))
+        UserManager.link_check_request_function({'uid': user_id,
+                                                 'url': link,
+                                                 'tag': tag}, {'url': link})
+
+    @staticmethod
+    def new_links_callback(links):
+        user_id = links['uid']
+        new_links = links['links']
+        user = UserManager.get_or_create_user(user_id)
+        user.new_links_acquired_event(new_links)
+
+    @staticmethod
+    def init(bot):
         UserManager.bot = bot
+        UserManager.link_check_request_function = ConsumerFactory.get_consumer(
+            config.check_url_req_queue,
+            config.check_url_ans_queue,
+            UserManager.link_check_acquired)
+
+        StraightQueue.subscribe_getter(config.new_offers_queue, UserManager.new_links_callback)
 
     @staticmethod
     def get_or_create_user(user_id):

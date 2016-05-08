@@ -3,10 +3,10 @@ import logging
 
 import bot_strings
 import config
+from Databases import Databases
 from Databases.Flats import FlatsDB
 from Databases.UserLinks import LinksDBManager
 from Databases.Invites import InvitesManager
-from Parsers import CianParser
 from .States import StateMachine, StateTags
 
 logger = logging.getLogger('user')
@@ -17,8 +17,8 @@ class User:
     db = None
 
     @staticmethod
-    def set_db(db):
-        User.db = db
+    def init():
+        User.db = Databases.get_users_db()
 
     def __init__(self, user_id, callback):
         # Getting info from db
@@ -84,8 +84,9 @@ class User:
                                                                      offer['url'])]]))
         self.callback(message)
 
-    def new_links_acquired_event(self, updates):
+    def new_links_acquired_event(self, updates_ids):
         logger.debug("Sending new offers to user " + str(self.user_id))
+        updates = FlatsDB.get_flats(updates_ids)
         received_links = set(User.db.find_one(self.db_filter)['received_links'])
         new_links = set()
         required_updates = (x for x in updates if x['id'] not in received_links)
@@ -142,10 +143,6 @@ class User:
         return self._links
 
     @staticmethod
-    def check_url_correct(link):
-        return CianParser.check_url_correct(link)
-
-    @staticmethod
     def check_tag_correct(tag):
         return len(tag) < config.max_tag_len
 
@@ -161,8 +158,8 @@ class User:
             self.callback(bot_strings.add_link_failed.format(tag=tag))
 
     def link_add_request(self, link, tag):
-        from UpdatesManager import UpdatesManager
-        UpdatesManager.add_link_checking(self.user_id, link, tag)
+        from User.UserManager import UserManager
+        UserManager.add_link_checking(self.user_id, link, tag)
 
     def add_link(self, link, tag):
         logger.debug("Adding link of user " + str(self.user_id) +

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from Queues import QueueWrapper
-from Queues.ProducerConsumer import load_object, dump_object
+from Queues import QueueWrapper, dump_object, load_object
 
 
 class ConsumerFactory:

@@ -9,3 +9,4 @@ echo "Building parser container"
 docker build --tag telegram_realty_parser - < Dockerfile-parser
 echo "Building all Moscow parser container"
 docker build --tag telegram_realty_all_moscow - < Dockerfile-all-Moscow
+docker build --tag telegram_realty_updates_manager - < Dockerfile-updates-manager
