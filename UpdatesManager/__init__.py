@@ -3,6 +3,8 @@ import threading
 import logging
 from queue import Queue
 
+import time
+
 import config
 from Databases.Flats import FlatsDB
 from Databases.UserLinks import LinksDBManager
@@ -36,8 +38,17 @@ class UpdatesManager:
     @staticmethod
     def worker():
         while not UpdatesManager.need_thread_close:
+            left_time = LinksDBManager.get_left_time_before_new_link_arrival()
+            if left_time > 0:
+                logger.debug("Waiting for new links to come")
+            while left_time > 0:
+                if UpdatesManager.need_thread_close:
+                    break
+                sleep_time = min(1, left_time)
+                left_time -= sleep_time
+                time.sleep(sleep_time)
+
             for link in LinksDBManager.get_expired_links():
-                LinksDBManager.update_expiration_time(link['_id'])
                 logger.debug("Parsing offers for user " + str(link['id']))
                 user_info = link['id']
                 UpdatesManager.link_update_request_function({'uid': user_info}, {'url': link['url'],
