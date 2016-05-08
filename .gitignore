@@ -1,8 +1,4 @@
 env/*
 .idea/*
-__pycache__
-.cache.sqlite
-*.db
 config.py
-start_docker_with_pass
 *.log

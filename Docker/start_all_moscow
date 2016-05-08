@@ -1,0 +1,1 @@
+docker run -d --name telegram_realty_all_moscow --link mongo-container:localhost --link rabbitmq-container:rabbit -v $(pwd)/../:/source telegram_realty_all_moscow

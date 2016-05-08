@@ -196,7 +196,8 @@ def parse_raw_offer(offer):
         entry_info['photos_count'] = photos
 
         return entry_info
-    except:
+    except Exception as e:
+        logger.error("There was an exception {}".format(e))
         logger.error("Error while parsing offer. Dumping object to file")
         with open("file_parse_error.html", 'w') as f:
             f.write(str(offer))
@@ -230,7 +231,6 @@ def get_new_offers(url, time=config.cian_default_timeout):
             logger.error("Already got this offer {}".format(offer['url']))
             old = ids[offer['id']]
             old = old.copy()
-            del old['_id']
             if old != offer:
                 logger.error("Different dicts: {}\n{}".format(offer, old))
         else:

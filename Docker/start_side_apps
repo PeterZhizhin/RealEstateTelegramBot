@@ -1,0 +1,2 @@
+docker run -v /root/mongodb/:/data/db -p 127.0.0.1:27018:27017 --name mongo-container -d mongo:latest --dbpath=/data/db
+docker run -d --name rabbitmq-container -p 127.0.0.1:5672:5672 -p 127.0.0.1:15672:15672 -e RABBITMQ_DEFAULT_USER=telegram_realty_admin -e RABBITMQ_DEFAULT_PASS=realty_da_best rabbitmq:3-management

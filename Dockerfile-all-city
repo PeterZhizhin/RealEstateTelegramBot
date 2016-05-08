@@ -1,4 +1,0 @@
-FROM telegram_realty
-WORKDIR /source
-ENV PYTHONIOENCODING=utf-8
-CMD python3 /source/AllMoscow.py

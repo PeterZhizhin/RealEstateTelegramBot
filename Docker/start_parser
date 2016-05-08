@@ -1,0 +1,1 @@
+docker run -d --link mongo-container:localhost --link rabbitmq-container:rabbit -v $(pwd)/../:/source telegram_realty_parser

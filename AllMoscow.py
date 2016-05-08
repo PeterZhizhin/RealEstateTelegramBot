@@ -1,15 +1,14 @@
+import LoggerInit
 import config
-from Parsers import CianParser
 import pytz
 from datetime import datetime
 import time
 import logging
-import multiprocessing
 
-import random
 from Queues import QueueWrapper
 from Queues.ProducerConsumer.ConsumerFactory import ConsumerFactory
 
+LoggerInit.init_logging(config.log_all_moscow_file)
 logger = logging.getLogger("AllMoscowParser")
 
 # all_moscow = "http://www.cian.ru/cat.php?currency=2&deal_type=rent&engine_version=2" \
@@ -81,18 +80,6 @@ def time_is_right():
 
 
 links_res = dict()
-logger = logging.getLogger()
-logging.getLogger('requests').setLevel(logging.WARNING)
-logging.getLogger('urllib3').setLevel(logging.WARNING)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(config.console_log_level)
-
-formatter = logging.Formatter(config.log_format)
-stream_handler.setFormatter(formatter)
-
-logger.addHandler(stream_handler)
 
 
 def link_parsed(info, result):

@@ -1,0 +1,2 @@
+FROM telegram_realty_base
+CMD python3 /source/AllMoscow.py
