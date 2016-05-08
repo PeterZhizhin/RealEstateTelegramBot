@@ -1,1 +1,1 @@
-docker run -d --link mongo-container:localhost --link rabbitmq-container:rabbit -v $(pwd)/../:/source telegram_realty_updates_manager
+docker run -d --name telegram_realty_updates_manager --link mongo-container:localhost --link rabbitmq-container:rabbit -v $(pwd)/../:/source telegram_realty_updates_manager
