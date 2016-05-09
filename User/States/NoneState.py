@@ -8,6 +8,9 @@ from . import StateTags
 class NoneState(BasicState):
     tag = StateTags.NONE
 
+    def __init__(self, user):
+        super().__init__(user)
+
     def enter(self):
         self.user.logger.debug('Entered none mode for ' + self.user.user_id)
         self.user.callback(bot_strings.hello_message)
@@ -23,9 +26,9 @@ class NoneState(BasicState):
             self.user.callback(bot_strings.admin_hello)
             self.authorize()
             return BasicState.create_transition(StateTags.MAIN)
-        if self.user.pull_auth_message(message.strip()):
-            if message == bot_strings.start_id:
-                self.user.callback(bot_strings.hello_message)
+        if message == bot_strings.start_id:
+            self.user.callback(bot_strings.hello_message)
+        elif self.user.pull_auth_message(message.strip()):
             self.authorize()
             return BasicState.create_transition(StateTags.MAIN)
         else:

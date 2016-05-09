@@ -16,7 +16,9 @@ log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 user_messages_before_ignore = 50
 default_user = {'auth': False, 'received_links': [],
                 'ignore_left': user_messages_before_ignore,
-                'updates_frequency': 60}
+                'updates_frequency': 60,
+                'max_price': 0,
+                'metro_stations': []}
 
 # Invites
 invite_length = 20
@@ -31,7 +33,7 @@ invites_db = 'invites'
 flats_db = 'flats'
 
 # RabbitMQ
-rabbit_mq_url = 'rabbit'
+rabbit_mq_url = 'localhost'
 rabbit_mq_port = 5672
 rabbit_mq_user = 'telegram_realty_admin'
 rabbit_mq_pass = 'realty_da_best'
@@ -63,3 +65,5 @@ max_tag_len = 30
 min_time_update_len = 1
 
 telegram_max_length = 4096
+
+max_inline_answers = 50

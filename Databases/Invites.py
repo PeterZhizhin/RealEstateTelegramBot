@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import config
 from Databases import Databases
 import random
 import string
@@ -36,3 +37,16 @@ class InvitesManager:
     @staticmethod
     def get_invites():
         return InvitesManager.db.find()
+
+    @staticmethod
+    def get_invite():
+        return InvitesManager.db.find_one()
+
+    @staticmethod
+    def get_invites_list(count=config.default_invites_count):
+        invites = [invite['id'] for invite in InvitesManager.get_invites()]
+        if len(invites) < count:
+            diff = config.default_invites_count - len(invites)
+            InvitesManager.insert_random_invites(diff, config.invite_length)
+            invites = [invite['id'] for invite in InvitesManager.get_invites()]
+        return invites[:count]

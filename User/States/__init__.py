@@ -5,11 +5,12 @@ from .NoneState import NoneState
 from .MainState import MainState
 from .SetUpdatesState import SetUpdatesState
 from .AddLinkStates import AddLinkState, AddLinkTagState
+from .SetPriceState import SetPriceState
+from .SetMetroState import SetMetroState
 
 
 class StateMachine:
     def __init__(self, user, initial_state_tag):
-        pass
         self.states = {class_tag: class_constructor(user)
                        for class_tag, class_constructor
                        in StateMetaClass.states.items()}
@@ -28,3 +29,13 @@ class StateMachine:
         res = self.state.update(message)
         if res is not None:
             self.change_state(res)
+
+    def process_inline_req(self, inline_query):
+        self.state.update_inline_req(inline_query)
+
+    def process_inline_ans(self, inline_ans):
+        self.state.update_inline_ans(inline_ans)
+
+    def process_callback(self, callback):
+        self.state.update_callback(callback)
+

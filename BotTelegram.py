@@ -18,10 +18,26 @@ if __name__ == "__main__":
     User.init()
     QueueWrapper.start(detach=True)
     try:
+        for query in bot.get_updates():
+            pass
         while True:
             logger.debug("Getting updates")
             for query in bot.get_updates(timeout=30):
-                user = UserManager.get_or_create_user(query['chat']['id'])
-                user.process_message(query['text'])
+                type = query['type']
+                body = query['body']
+                user_id = query['uid']
+                user = UserManager.get_or_create_user(user_id)
+                if type == 'message':
+                    logger.debug("Sending message to user {}".format(user_id))
+                    user.process_message(body)
+                elif type == 'inline_req':
+                    logger.debug("Sending inline request to user {}".format(user_id))
+                    user.process_inline_req(body)
+                elif type == 'inline_ans':
+                    logger.debug("Sending inline answer to user {}".format(user_id))
+                    user.process_inline_ans(body)
+                elif type == 'callback':
+                    logger.debug("Sending callback to user {}".format(user_id))
+                    user.process_callback(body)
     except KeyboardInterrupt:
         QueueWrapper.close()

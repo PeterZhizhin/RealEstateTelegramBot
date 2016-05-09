@@ -1,2 +1,3 @@
 FROM telegram_realty_base
+ENV PYTHONIOENCODING=utf-8
 CMD python3 /source/AllMoscow.py

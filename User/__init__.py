@@ -34,7 +34,7 @@ class User:
             # updates to avoid potential errors
             missed_keys_values = {key: value for key, value in
                                   config.default_user.items()
-                                  if key not in data}
+                                  if key not in data.keys()}
             if len(missed_keys_values) > 0:
                 data.update(missed_keys_values)
                 User.db.update_one(self.db_filter, {"$set": missed_keys_values})
@@ -47,6 +47,8 @@ class User:
         self.messages_before_ignore_left = data['ignore_left']
         self._updates_duration = data['updates_frequency']
         self._links = list(LinksDBManager.get_user_links(user_id))
+        self._max_price = data['max_price']
+        self._metro_stations = set(data['metro_stations'])
 
         self.callback = callback
         self.state_machine = StateMachine(self,
@@ -54,13 +56,20 @@ class User:
                                           self._authorized
                                           else StateTags.NONE)
 
-    def invoke_invites(self):
-        invites = [invite['id'] for invite in InvitesManager.get_invites()]
-        if len(invites) < config.default_invites_count:
-            diff = config.default_invites_count - len(invites)
-            InvitesManager.insert_random_invites(diff, config.invite_length)
-            invites = [invite['id'] for invite in InvitesManager.get_invites()]
-        self.callback("\n".join(invites))
+    def get_metro_stations(self):
+        return self._metro_stations
+
+    def add_station(self, name):
+        self._metro_stations.add(name)
+        User.db.update_one(self.db_filter, {'$push': {'metro_stations': name}})
+
+    def remove_station(self, name):
+        self._metro_stations.remove(name)
+        User.db.update_one(self.db_filter, {'$pull': {'metro_stations': name}})
+
+    def clear_stations(self):
+        self._metro_stations = set()
+        User.db.update_one(self.db_filter, {'$set': {'metro_stations': []}})
 
     def send_offer_info(self, offer_id):
         offer = FlatsDB.get_flat(offer_id)
@@ -112,6 +121,15 @@ class User:
             return True
         User.db.update_one(self.db_filter, {'$inc': {'ignore_left': -1}})
         return False
+
+    @property
+    def max_price(self):
+        return self._max_price
+
+    @max_price.setter
+    def max_price(self, value):
+        self._max_price = value
+        User.db.update_one(self.db_filter, {'$set': {'max_price': value}})
 
     @property
     def updates_duration(self):
@@ -168,6 +186,19 @@ class User:
         self._links.append(LinksDBManager.add_user_link(self.user_id, link, tag,
                                                         self.updates_duration, 'CIAN'))
 
-    def process_message(self, message_text):
-        if self.messages_before_ignore_left > 0:
+    def process_message(self, message):
+        message_text = message['text']
+        if self.messages_before_ignore_left >= 0:
             self.state_machine.process_message(message_text)
+
+    def process_inline_req(self, inline_message):
+        if self.messages_before_ignore_left >= 0:
+            self.state_machine.process_inline_req(inline_message)
+
+    def process_inline_ans(self, inline_answer):
+        if self.messages_before_ignore_left >= 0:
+            self.state_machine.process_inline_ans(inline_answer)
+
+    def process_callback(self, callback):
+        if self.messages_before_ignore_left >= 0:
+            self.state_machine.process_inline_ans(callback)

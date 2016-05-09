@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+
 from .StateMetaClass import StateMetaClass
 
 
@@ -19,6 +20,15 @@ class BasicState(metaclass=StateMetaClass):
         pass
 
     def update(self, message):
+        pass
+
+    def update_inline_req(self, inline_query):
+        pass
+
+    def update_inline_ans(self, inline_ans):
+        pass
+
+    def update_callback(self, callback):
         pass
 
     def exit(self):

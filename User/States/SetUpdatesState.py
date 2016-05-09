@@ -9,7 +9,6 @@ class SetUpdatesState(BasicState):
 
     def __init__(self, user):
         super().__init__(user)
-        self.time = 0
 
     def enter(self):
         self.user.callback(bot_strings.set_updates_enter_message)

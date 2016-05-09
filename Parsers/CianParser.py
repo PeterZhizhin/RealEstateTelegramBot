@@ -125,7 +125,7 @@ def parse_raw_offer(offer):
         if metro.find('a') is not None:
             metro_name = fix_text(metro.find('a'))
             entry_info['location']['metro'] = {}
-            entry_info['location']['metro']['name'] = metro_name
+            entry_info['location']['metro']['name'] = metro_name.replace("м. ", "")
             metro_descr = fix_text(metro.find('span', {'class': 'objects_item_metro_comment'}))
             entry_info['location']['metro']['description'] = metro_descr
 
@@ -228,13 +228,15 @@ def get_new_offers(url, time=config.cian_default_timeout):
     ids = {}
     for offer in get_offers(url, time):
         if offer['id'] in ids.keys():
-            logger.error("Already got this offer {}".format(offer['url']))
             old = ids[offer['id']]
             old = old.copy()
             if old != offer:
                 logger.error("Different dicts: {}\n{}".format(offer, old))
         else:
             ids[offer['id']] = offer
+
+            offer['seen_by_suspicious_validator'] = False
+            offer['suspicious'] = False
             db.find_one_and_replace({'id': offer['id']}, offer, upsert=True)
             yield offer
     logger.info("Totally parsed {} real offers.".format(len(ids)))
