@@ -33,9 +33,9 @@ class UserManager:
                                                  'tag': tag}, {'url': link})
 
     @staticmethod
-    def new_links_callback(links):
-        user_id = links['uid']
-        new_links = links['links']
+    def new_offers_callback(offers):
+        user_id = offers['uid']
+        new_links = offers['offers']
         user = UserManager.get_or_create_user(user_id)
         user.new_links_acquired_event(new_links)
 
@@ -47,7 +47,7 @@ class UserManager:
             config.check_url_ans_queue,
             UserManager.link_check_acquired)
 
-        StraightQueue.subscribe_getter(config.new_offers_queue, UserManager.new_links_callback)
+        StraightQueue.subscribe_getter(config.new_offers_queue, UserManager.new_offers_callback)
 
     @staticmethod
     def get_or_create_user(user_id):

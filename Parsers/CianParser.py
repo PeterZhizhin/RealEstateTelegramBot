@@ -233,10 +233,9 @@ def get_new_offers(url, time=config.cian_default_timeout):
             if old != offer:
                 logger.error("Different dicts: {}\n{}".format(offer, old))
         else:
-            ids[offer['id']] = offer
-
             offer['seen_by_suspicious_validator'] = False
             offer['suspicious'] = False
+            ids[offer['id']] = offer
             db.find_one_and_replace({'id': offer['id']}, offer, upsert=True)
             yield offer
     logger.info("Totally parsed {} real offers.".format(len(ids)))

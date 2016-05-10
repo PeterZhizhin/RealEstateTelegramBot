@@ -21,7 +21,7 @@ class UpdatesManager:
     def link_updated_result(info, new_links):
         message = {
             'uid': info['uid'],
-            'links': new_links,
+            'offers': new_links,
         }
         UpdatesManager.links_send_function(message)
 
