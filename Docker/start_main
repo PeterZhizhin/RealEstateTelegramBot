@@ -1,1 +1,1 @@
-docker run -d --name telegram_realty_main --link mongo-container:localhost --link rabbitmq-container:rabbit -v $(pwd)/../:/source telegram_realty_main
+docker run -d --restart=always --name telegram_realty_main --link mongo-container:localhost --link rabbitmq-container:rabbit -v $(pwd)/../:/source telegram_realty_main
