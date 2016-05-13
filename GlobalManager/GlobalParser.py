@@ -85,6 +85,7 @@ class GlobalParser:
     @staticmethod
     def work():
         while not GlobalParser.need_close:
+            logger.debug("Started parsing process")
             GlobalParser.flats_ids = []
             GlobalParser.links_res = dict()
             for i, link in enumerate(config.links_to_parse):
@@ -95,6 +96,7 @@ class GlobalParser:
                 logger.debug("Waiting 10 seconds for new links result")
                 GlobalParser.safe_sleep(10)
             GlobalParser.new_links_update()
+            logger.debug("Sleeping {} seconds".format(config.parser_wait_time))
             GlobalParser.safe_sleep(config.parser_wait_time)
 
     @staticmethod
