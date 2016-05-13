@@ -45,9 +45,11 @@ class GlobalParser:
         for flat in flats:
             flat['price'] = GlobalParser.fix_price(flat)
         # Get all users with their fields
-        users = Databases.get_users_db().find({}, {'id': 1,
-                                                   'max_price': 1,
-                                                   'metro_stations': 1})
+        users = Databases.get_users_db().find({'max_price': {'$exists': True},
+                                               'metro_stations': {'$exists': True}},
+                                              {'id': 1,
+                                               'max_price': 1,
+                                               'metro_stations': 1})
         # For each user filter links they need
         for user in users:
             user_id = user['id']
