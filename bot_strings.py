@@ -3,11 +3,45 @@ import re
 
 # User
 # None state
-hello_message = "Добро пожаловать в бот аренды. Для продолжения введите инвайт."
+hello_message = "Добро пожаловать в бот аренды. Для продолжения введите инвайт.\n" \
+                "Для получения инвайта и по всем вопросам обращаться к @PeterZhizhin"
 auth_failed = "Авторизация провалена. Инвайт неверен. Осталось попыток: "
 auth_finished = "Авторизация успешна."
 auth_totally_failed = "Авторизация запрещена. Не осталось попыток."
 start_id = '/start'
+
+main_state_message = "Добро пожаловать в бот аренды квартир.\n" \
+                     "Сейчас вы можете добавить свои собственные" \
+                     " ссылки на квартиры с ЦИАН или выбрать станции метро цену для аренды.\n" \
+                     "Пока поддерживаются только однокомнатные квартиры и ограниченный набор станций."
+main_links_label = "links"
+main_search_label = "search"
+main_unsubscribe_label = "unsubscribe"
+main_state_keyboard_label = [[("Ваши ссылки на ЦИАН", main_links_label)],
+                             [("Настройки поиска", main_search_label)],
+                             [("Сбросить все настройки", main_unsubscribe_label)]]
+unsubscribe_confirm = "Вы уверены, что хотите произвести полный сброс всех настроек?\n" \
+                       "Удалить все станции метро и ссылки?"
+yes_label = "yes"
+no_label = "no"
+unsubscribe_keyboard_label = [[("Да", yes_label), ("Нет", no_label)]]
+unsubscribed_notify = "Все ссылки, станции метро удалены"
+
+links_main_state_enter = "В бот можно добавить ссылки на ЦИАН чтобы он" \
+                         " периодически проходил по ним и присылал вам новые результаты\n" \
+                         "Ссылки обновляются раз в {updates_duration}\n" \
+                         "Список ссылок:\n" \
+                         "{links}"
+change_links_label = "change_links"
+change_updates_duration_label = "set_updates_duration"
+back_label = "back"
+links_main_state_keyboard = [[("Изменить список ссылок", change_links_label)],
+                             [("Изменить частоту уведомлений", change_updates_duration_label)],
+                             [("Назад", back_label)]]
+
+update_links_duration_enter = "Как часто вы хотите обновлять ссылки?"
+update_links_duration_state_keyboard = [[("Час", 60), ("Два", 120), ("Четыре", 4*60)],
+                                        [("День")]]
 
 # Main state
 main_help = """Добро пожаловать в бот аренды квартир.
@@ -140,19 +174,12 @@ base_for_sending_flat = """Адрес:
 {price} ({price_info})
 Процент: {percent}
 
-Дополнительные сведения:
-{additional_info}
-
-Комментарий:
-{comment}
-
 Контакты:
 {contacts}
 """
 go_to_flat_by_url_caption = "Открыть в браузере"
-base_for_sending_preview = "{location} {price} {info_cmd}"
+base_for_sending_preview = "{location} {price} [URL]({url}) {info_cmd}"
 cian_base_cmd = "/cian{id}"
 cian_cmd_regexp = re.compile("\/cian([0-9]+)")
 
 no_flat_with_id = "Квартиры с таким id не найдено"
-

@@ -8,6 +8,10 @@ from .AddLinkStates import AddLinkState, AddLinkTagState
 from .SetPriceState import SetPriceState
 from .SetMetroState import SetMetroState
 
+from .LinksStates import LinksMain
+from .SearchStates import SearchMain
+from .UnsubscribeConfirmState import UnsubscribeConfirmState
+
 
 class StateMachine:
     def __init__(self, user, initial_state_tag):
@@ -17,6 +21,8 @@ class StateMachine:
         self.state = self.states[initial_state_tag]
 
     def change_state(self, params, silent=False):
+        if params is None:
+            return
         tag = params[0]
         args = params[1]
         if not silent:
@@ -27,8 +33,7 @@ class StateMachine:
 
     def process_message(self, message):
         res = self.state.update(message)
-        if res is not None:
-            self.change_state(res)
+        self.change_state(res)
 
     def process_inline_req(self, inline_query):
         self.state.update_inline_req(inline_query)
@@ -37,5 +42,6 @@ class StateMachine:
         self.state.update_inline_ans(inline_ans)
 
     def process_callback(self, callback):
-        self.state.update_callback(callback)
+        res = self.state.update_callback(callback)
+        self.change_state(res)
 

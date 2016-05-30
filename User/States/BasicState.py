@@ -4,6 +4,10 @@ import logging
 from .StateMetaClass import StateMetaClass
 
 
+class NoStateFoundException(Exception):
+    pass
+
+
 class BasicState(metaclass=StateMetaClass):
     tag = ''
     logger = logging.getLogger('State')
@@ -11,6 +15,8 @@ class BasicState(metaclass=StateMetaClass):
 
     @staticmethod
     def create_transition(new_state_tag, **kwargs):
+        if new_state_tag not in StateMetaClass.states:
+            raise NoStateFoundException
         return new_state_tag, kwargs
 
     def __init__(self, user):

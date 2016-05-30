@@ -12,7 +12,7 @@ def request(api_key, method_name, **kwargs):
     if 'timeout' in kwargs:
         request_timeout = 2 * int(kwargs['timeout'])
     kwargs = {key: json.dumps(value) if isinstance(value, (dict, list, tuple, set))
-                else value for key, value in kwargs.items()}
+    else value for key, value in kwargs.items()}
     req = requests.post(
         'https://api.telegram.org/bot{api_key}/{method}'.format(
             api_key=api_key,
@@ -86,22 +86,33 @@ class InlineAnswer:
 
     def send(self, answer_method):
         result = self._to_dict()
-        answer_method(result)
+        return answer_method(result)
 
 
 class MessageFunctionObject:
-    def __init__(self, send_msg_function, send_inline_ans_function, chat_id):
+    def __init__(self, send_msg_function, send_inline_ans_function,
+                 edit_message_text_function, edit_reply_markup,
+                 answer_callback_function,
+                 chat_id):
         self.chat_id = chat_id
         self.send_msg_function = send_msg_function
         self.send_inline_ans_function = send_inline_ans_function
-        self.msg = dict()
-        self.clear_message()
+        self.edit_message_text_function = edit_message_text_function
+        self.edit_reply_markup = edit_reply_markup
+        self.answer_callback_function = answer_callback_function
 
-    def clear_message(self):
-        self.msg = dict(chat_id=self.chat_id)
-
-    def add_markup(self, markup):
-        self.msg['reply_markup'] = json.dumps(markup)
+    @staticmethod
+    def get_inline_keyboard(markup_array):
+        keyboard_array = []
+        for array in markup_array:
+            res_array = []
+            for button in array:
+                res_array.append({
+                    'text': button[0],
+                    'callback_data': button[1],
+                })
+            keyboard_array.append(res_array)
+        return MessageFunctionObject.inline_keyboard(keyboard_array)
 
     @staticmethod
     def inline_keyboard(keyboard):
@@ -117,14 +128,54 @@ class MessageFunctionObject:
         a['url'] = url
         return a
 
-    def __send_one(self, message_text):
-        self.msg['text'] = message_text
-        return self.send_msg_function(self.msg)
+    def prepare_message(self, message_text=None, inline_markup=None, parse_mode=None,
+                        disable_web_page_preview=False):
+        msg = dict()
+        msg['chat_id'] = self.chat_id
+        if message_text is not None:
+            msg['text'] = message_text
+        if inline_markup is not None:
+            msg['reply_markup'] = json.dumps(inline_markup)
+        if parse_mode is not None:
+            assert parse_mode in ('Markdown', 'HTML')
+            msg['parse_mode'] = parse_mode
+        if disable_web_page_preview:
+            msg['disable_web_page_preview'] = True
+        return msg
+
+    def __send_one(self, message_text, inline_markup=None, parse_mode=None, disable_web_page_preview=False):
+        msg = self.prepare_message(message_text, inline_markup, parse_mode, disable_web_page_preview)
+        return self.send_msg_function(msg)
 
     def answer_inline(self, answer):
-        answer.send(self.send_inline_ans_function)
+        return answer.send(self.send_inline_ans_function)
 
-    def __call__(self, message_text):
+    def change_text(self, message_id, message_text, inline_markup=None, parse_mode=None):
+        msg = self.prepare_message(message_text, inline_markup, parse_mode)
+        msg['message_id'] = message_id
+        return self.edit_message_text_function(msg)
+
+    def answer_callback(self, callback_id, text=None, show_alert=False):
+        msg = dict()
+        msg['callback_query_id'] = callback_id
+        if text is not None:
+            msg['text'] = text
+        if show_alert:
+            msg['show_alert'] = True
+        return self.answer_callback_function(msg)
+
+    def change_message_markup(self, message_id, reply_markup=None):
+        msg = {
+            'chat_id': self.chat_id,
+            'message_id': message_id,
+        }
+        if reply_markup is not None:
+            msg['reply_markup'] = reply_markup
+        return self.edit_reply_markup(msg)
+
+    def __call__(self, message_text, inline_markup=None, parse_mode=None,
+                 disable_web_page_preview=False):
+        # Allows to split message to fit Telegram requirements
         if len(message_text) == 0:
             return None
         if len(message_text) > config.telegram_max_length:
@@ -139,8 +190,7 @@ class MessageFunctionObject:
             total_messages = [message_text]
         res = None
         for message in total_messages:
-            res = self.__send_one(message)
-        self.clear_message()
+            res = self.__send_one(message, inline_markup, parse_mode, disable_web_page_preview)
         assert res is not None
         return res
 
@@ -182,5 +232,21 @@ class Telegram:
         return safe_request(self.api_key, 'answerInlineQuery',
                             **answer)
 
+    def edit_text(self, new_message):
+        return safe_request(self.api_key, 'editMessageText',
+                            **new_message)
+
+    def edit_message_markup(self, params):
+        return safe_request(self.api_key, 'editMessageReplyMarkup',
+                            **params)
+
+    def answer_callback(self, params):
+        return safe_request(self.api_key, 'answerCallbackQuery',
+                            **params)
+
     def return_callback(self, chat_id):
-        return MessageFunctionObject(self.send_message, self.send_inline_ans, chat_id)
+        return MessageFunctionObject(self.send_message, self.send_inline_ans,
+                                     self.edit_text, self.edit_message_markup,
+                                     self.answer_callback,
+                                     chat_id)
+

@@ -8,6 +8,7 @@ from Databases.Flats import FlatsDB
 from Databases.UserLinks import LinksDBManager
 from Databases.Invites import InvitesManager
 from .States import StateMachine, StateTags
+import TelegramAPI
 
 logger = logging.getLogger('user')
 logger.setLevel(logging.DEBUG)
@@ -49,6 +50,7 @@ class User:
         self._links = list(LinksDBManager.get_user_links(user_id))
         self._max_price = data['max_price']
         self._metro_stations = set(data['metro_stations'])
+        self._menu_message = data['menu_message_id']
 
         self.callback = callback
         self.state_machine = StateMachine(self,
@@ -71,6 +73,10 @@ class User:
         self._metro_stations = set()
         User.db.update_one(self.db_filter, {'$set': {'metro_stations': []}})
 
+    def clear_all(self):
+        self.clear_stations()
+        self.remove_links()
+
     def send_offer_info(self, offer_id):
         offer = FlatsDB.get_flat(offer_id)
         if offer is None:
@@ -85,13 +91,12 @@ class User:
                                                            object=offer['object'], sizes_total=sizes_info,
                                                            floor=offer['floor'], price=offer['price'][0],
                                                            price_info=offer['price'][2], percent=offer['fee'],
-                                                           additional_info=", ".join(offer['info']),
-                                                           comment=offer['comment'],
                                                            contacts=offer['contacts'])
-        self.callback.add_markup(
-            self.callback.inline_keyboard([[self.callback.inline_url(bot_strings.go_to_flat_by_url_caption,
-                                                                     offer['url'])]]))
-        self.callback(message)
+
+        url = self.callback.inline_url(bot_strings.go_to_flat_by_url_caption,
+                                       offer['url'])
+        markup = self.callback.inline_keyboard([[url]])
+        self.callback(message, inline_markup=markup)
 
     def new_links_acquired_event(self, updates_ids):
         logger.debug("Sending new offers to user " + str(self.user_id))
@@ -110,8 +115,9 @@ class User:
             price = update['price'][0]
             message += bot_strings.base_for_sending_preview.format(location=location, price=price,
                                                                    info_cmd=bot_strings.cian_base_cmd.format(
-                                                                       id=update['id'])) + '\n'
-        self.callback(message)
+                                                                       id=update['id']),
+                                                                   url=update['url']) + '\n'
+        self.callback(message, parse_mode='Markdown', disable_web_page_preview=True)
         if len(new_links) > 0:
             User.db.update_one(self.db_filter, {"$pushAll": {'received_links': list(new_links)}})
 
@@ -164,6 +170,15 @@ class User:
     def check_tag_correct(tag):
         return len(tag) < config.max_tag_len
 
+    @property
+    def menu_message(self):
+        return self._menu_message
+
+    @menu_message.setter
+    def menu_message(self, value):
+        self._menu_message = value
+        User.db.update_one(self.db_filter, {'$set': {'menu_message_id': value}})
+
     @staticmethod
     def check_time_correct(time):
         return isinstance(time, int) and time >= config.min_time_update_len
@@ -186,6 +201,25 @@ class User:
         self._links.append(LinksDBManager.add_user_link(self.user_id, link, tag,
                                                         self.updates_duration, 'CIAN'))
 
+    def remove_links(self):
+        logger.debug("User {} removing all links".format(self.user_id))
+        self._links = []
+        LinksDBManager.remove_all_links(self.user_id)
+
+    def set_menu(self, message_text, inline_keyboard, parse_mode=None, invoke=False):
+        inline_keyboard = TelegramAPI.MessageFunctionObject.get_inline_keyboard(inline_keyboard)
+        if not self.menu_message:
+            invoke = True
+        if invoke:
+            if self.menu_message:
+                self.callback.change_message_markup(self.menu_message)
+            new_message = self.callback(message_text, inline_markup=inline_keyboard,
+                                        parse_mode=parse_mode)
+            self.menu_message = new_message['message_id']
+        else:
+            self.callback.change_text(self.menu_message, message_text, inline_markup=inline_keyboard,
+                                      parse_mode=parse_mode)
+
     def process_message(self, message):
         message_text = message['text']
         if self.messages_before_ignore_left >= 0:
@@ -201,4 +235,4 @@ class User:
 
     def process_callback(self, callback):
         if self.messages_before_ignore_left >= 0:
-            self.state_machine.process_inline_ans(callback)
+            self.state_machine.process_callback(callback)

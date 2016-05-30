@@ -41,6 +41,10 @@ class LinksDBManager:
         return LinksDBManager.links_db.find_one({'_id': res.inserted_id})
 
     @staticmethod
+    def remove_all_links(user_id):
+        LinksDBManager.links_db.delete_many({'id': user_id})
+
+    @staticmethod
     def update_frequency(unique_id, new_frequency):
         next_update = LinksDBManager.links_db.find_one({"_id": unique_id})['last_update'] + \
                       timedelta(minutes=new_frequency)
