@@ -26,7 +26,7 @@ class User:
         self.db_filter = {'id': user_id}
         data = User.db.find_one(self.db_filter)
         if data is None:
-            logger.debug("User " + str(user_id) + " added to DB")
+            logger.debug("User {} added to DB".format(str(user_id)))
             data = config.default_user.copy()
             data['id'] = user_id
             User.db.insert_one(data)
@@ -40,7 +40,7 @@ class User:
                 data.update(missed_keys_values)
                 User.db.update_one(self.db_filter, {"$set": missed_keys_values})
 
-        logger.debug("User " + str(user_id) + " " + str(data) + " inited")
+        logger.debug("User {} {} inited".format(user_id, data))
 
         # Filling fields
         self.user_id = user_id
