@@ -13,20 +13,29 @@ def request(api_key, method_name, **kwargs):
         request_timeout = 2 * int(kwargs['timeout'])
     kwargs = {key: json.dumps(value) if isinstance(value, (dict, list, tuple, set))
     else value for key, value in kwargs.items()}
-    req = requests.post(
-        'https://api.telegram.org/bot{api_key}/{method}'.format(
-            api_key=api_key,
-            method=method_name
-        ),
-        kwargs,
-        timeout=request_timeout
-    )
+    try:
+        req = requests.post(
+            'https://api.telegram.org/bot{api_key}/{method}'.format(
+                api_key=api_key,
+                method=method_name
+            ),
+            kwargs,
+            timeout=request_timeout
+        )
+    except requests.exceptions.ReadTimeout:
+        return request(api_key, method_name, **kwargs)
     return req
+
+
+class UserBlocked(Exception):
+    pass
 
 
 def check_errors(request):
     if not request.json()['ok']:
         js = request.json()
+        if request.status_code == 403 or js['error_code'] == 403:
+            raise UserBlocked('User blocked the bot')
         raise Exception(
             'Telegram request \'ok\' field is not True.\n Resulted status code: {}.\n Description: {}'.format(
                 js['error_code'],
@@ -249,4 +258,3 @@ class Telegram:
                                      self.edit_text, self.edit_message_markup,
                                      self.answer_callback,
                                      chat_id)
-

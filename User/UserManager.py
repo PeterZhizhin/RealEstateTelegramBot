@@ -50,11 +50,18 @@ class UserManager:
         StraightQueue.subscribe_getter(config.new_offers_queue, UserManager.new_offers_callback)
 
     @staticmethod
+    def delete_user(user_id):
+        with UserManager.dict_lock:
+            if user_id in UserManager.users_dict:
+                del UserManager.users_dict[user_id]
+
+    @staticmethod
     def get_or_create_user(user_id):
         with UserManager.dict_lock:
             if user_id in UserManager.users_dict:
                 return UserManager.users_dict[user_id]
-            u = User(user_id, UserManager.bot.return_callback(user_id))
+
+            u = User(user_id, UserManager.bot.return_callback(user_id), lambda: UserManager.delete_user(user_id))
             logger.debug("Added user with ID " + str(user_id))
             UserManager.users_dict[user_id] = u
             return u

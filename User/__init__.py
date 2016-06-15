@@ -21,7 +21,7 @@ class User:
     def init():
         User.db = Databases.get_users_db()
 
-    def __init__(self, user_id, callback):
+    def __init__(self, user_id, callback, delete_user_from_dict_callback):
         # Getting info from db
         self.db_filter = {'id': user_id}
         data = User.db.find_one(self.db_filter)
@@ -52,11 +52,38 @@ class User:
         self._metro_stations = set(data['metro_stations'])
         self._menu_message = data['menu_message_id']
 
-        self.callback = callback
+        self.raw_callback = callback
+        self.callback = User.UserCallback(self)
+        self.delete_callback = delete_user_from_dict_callback
         self.state_machine = StateMachine(self,
                                           StateTags.MAIN if
                                           self._authorized
                                           else StateTags.NONE)
+
+    def delete_user(self):
+        logger.debug("Deleting user {}".format(self.user_id))
+        LinksDBManager.remove_all_links(self.user_id)
+        User.db.remove(self.db_filter)
+        self.delete_callback()
+
+    class UserCallback:
+        def __init__(self, user):
+            self.user = user
+
+        def __call__(self, *args, **kwargs):
+            return self.__getattr__('__call__')(*args, **kwargs)
+
+        def __getattr__(self, item):
+            var = getattr(self.user.raw_callback, item)
+            if callable(var):
+                def callback(*args, **kwargs):
+                    try:
+                        return var(*args, **kwargs)
+                    except TelegramAPI.UserBlocked:
+                        logger.info("User {} blocked the bot. Deleting.".format(self.user_id))
+                        self.user.delete_user()
+                return callback
+            return var
 
     def get_metro_stations(self):
         return self._metro_stations

@@ -22,15 +22,18 @@ class NoneState(BasicState):
         self.user.authorized = True
 
     def update(self, message):
-        if self.user.user_id == config.admin_id:
-            self.user.callback(bot_strings.admin_hello)
-            self.authorize()
-            return BasicState.create_transition(StateTags.MAIN)
-        if message == bot_strings.start_id:
+        # if message == bot_strings.start_id:
+        if False:
             self.user.callback(bot_strings.hello_message)
-        elif self.user.pull_auth_message(message.strip()):
+        # elif self.user.pull_auth_message(message.strip()):
+        elif True:
             self.authorize()
             return BasicState.create_transition(StateTags.MAIN)
         else:
             self.user.callback(bot_strings.auth_failed +
                                str(self.user.messages_before_ignore_left))
+
+        if self.user.user_id == config.admin_id:
+            self.user.callback(bot_strings.admin_hello)
+            self.authorize()
+            return BasicState.create_transition(StateTags.MAIN)

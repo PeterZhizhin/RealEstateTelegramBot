@@ -4,11 +4,13 @@ import re
 # User
 # None state
 hello_message = "Добро пожаловать в бот аренды. Для продолжения введите инвайт.\n" \
-                "Для получения инвайта и по всем вопросам обращаться к @PeterZhizhin"
+                "Для получения инвайта и по всем вопросам обращаться к @PeterZhizhin\n" \
+                "Во время презентации введите вообще что угодно."
 auth_failed = "Авторизация провалена. Инвайт неверен. Осталось попыток: "
 auth_finished = "Авторизация успешна."
 auth_totally_failed = "Авторизация запрещена. Не осталось попыток."
 start_id = '/start'
+stop_id = '/stop'
 
 main_state_message = "Добро пожаловать в бот аренды квартир.\n" \
                      "Сейчас вы можете добавить свои собственные" \
@@ -71,7 +73,11 @@ no_links_message = "Ссылок нет."
 awaitance_time_exceeded = "Превышено время ожидания. Повторите попытку."
 cancel_id = '/cancel'
 
-add_link_enter = "Введите ссылку или /cancel для отмены"
+add_link_enter = "Введите ссылку или /cancel для отмены.\n" \
+                 "Можете попробовать эту (аренда 1 комната Щелковская, Новокосино, " \
+                 "с мебелью, кухней, до 30 тысяч):\n" \
+                 "http://www.cian.ru/cat.php?currency=2&deal_type=rent&engine_version=2&foot_min=25&maxprice=30000" \
+                 "&mebel=1&mebel_k=1&metro%5B0%5D=153&metro%5B1%5D=243&offer_type=flat&only_foot=2&rfgr=1&type=-2&wm=1"
 add_link_failed = "Добавление ссылки \"{tag}\" не удалось. Попробуйте ещё раз, набрав /add_link"
 add_link_success = "Добавление ссылки \"{tag}\" успешно."
 

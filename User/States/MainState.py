@@ -18,7 +18,8 @@ class MainState(BasicState):
             bot_strings.get_links_id: self.get_links_answer,
             bot_strings.set_updates_id: lambda: BasicState.create_transition(StateTags.SET_UPDATES),
             bot_strings.set_price_id: lambda: BasicState.create_transition(StateTags.SET_PRICE),
-            bot_strings.set_stations_id: lambda: BasicState.create_transition(StateTags.SET_METRO)
+            bot_strings.set_stations_id: lambda: BasicState.create_transition(StateTags.SET_METRO),
+            bot_strings.stop_id: self.user.delete_user,
         }
         if self.user.user_id == config.admin_id:
             self.state_changes[bot_strings.invoke_invites] = self.send_invites
@@ -34,8 +35,8 @@ class MainState(BasicState):
 
     def print_hello_message(self, invoke=False):
         self.user.callback(bot_strings.main_help)
-        self.user.set_menu(bot_strings.main_state_message, bot_strings.main_state_keyboard_label,
-                           invoke=invoke)
+        # self.user.set_menu(bot_strings.main_state_message, bot_strings.main_state_keyboard_label,
+        #                   invoke=invoke)
 
     def get_links_answer(self):
         links = self.user.links

@@ -30,7 +30,7 @@ class UpdatesManager:
         while True:
             left_time = LinksDBManager.get_left_time_before_new_link_arrival()
             if left_time > 0:
-                logger.debug("Waiting for new links to come")
+                logger.debug("Waiting {} seconds for new links to come".format(left_time))
                 time.sleep(left_time)
 
             for link in LinksDBManager.get_expired_links():

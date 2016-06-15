@@ -16,11 +16,17 @@ class LinksDBManager:
     # 'next_update': <Timestamp>,
     # 'type': <"CIAN", "Yandex", "Avito", etc.>}
     links_db = Databases.get_user_links_db()
-    next_estimated_link_update = min(update['next_update'] for update in links_db.find())
+    if links_db.count() > 0:
+        next_estimated_link_update = min(update['next_update'] for update in links_db.find())
+    else:
+        next_estimated_link_update = datetime.utcnow()
 
     @staticmethod
     def get_left_time_before_new_link_arrival():
         now = datetime.utcnow()
+        if LinksDBManager.links_db.count() == 0:
+            LinksDBManager.next_estimated_link_update = datetime.utcnow() + timedelta(seconds=10)
+            return 10
         if LinksDBManager.next_estimated_link_update > now:
             return (LinksDBManager.next_estimated_link_update - now).seconds
         return 0
@@ -59,6 +65,8 @@ class LinksDBManager:
             for update in list(LinksDBManager.links_db.find({'next_update': {"$lte": datetime.utcnow()}})):
                 LinksDBManager.update_expiration_time(update['_id'])
                 yield update
+            if LinksDBManager.next_estimated_link_update is None:
+                LinksDBManager.next_estimated_link_update = datetime.utcnow()
         else:
             return []
 
