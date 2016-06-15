@@ -11,7 +11,7 @@ def init_logging(log_filename):
     logging.getLogger('pika').setLevel(logging.INFO)
     logger.setLevel(logging.DEBUG)
 
-    file_handler = logging.FileHandler(log_filename)
+    file_handler = logging.FileHandler(log_filename, encoding='utf-8')
     file_handler.setLevel(config.file_log_level)
 
     stream_handler = logging.StreamHandler()

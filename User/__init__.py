@@ -80,7 +80,7 @@ class User:
                     try:
                         return var(*args, **kwargs)
                     except TelegramAPI.UserBlocked:
-                        logger.info("User {} blocked the bot. Deleting.".format(self.user_id))
+                        logger.info("User {} blocked the bot. Deleting.".format(self.user.user_id))
                         self.user.delete_user()
                 return callback
             return var
